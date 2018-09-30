@@ -1,7 +1,9 @@
 ---
 title: "Métodos Inferenciais Avançados"
-author: "Aluno"
-output: html_document
+author: "William Peixoto"
+output: 
+  html_document:
+    toc: True
 ---
 
 ```{r setup, include=FALSE}
@@ -16,9 +18,11 @@ Desenvolva os itens a seguir aplicando técnicas gráficas e formais, e apresent
 
 Utilize o presente documento Markdown (referências em <http://rmarkdown.rstudio.com>, <https://bookdown.org/yihui/rmarkdown/>) para a inserção do código e geração de resultados.
 
-a.	Conheça a estrutura dos dados e explore as variáveis quantitativas e qualitativas. 
+### Estrutura e variáveis
 
-```{r}
+a. Conheça a estrutura dos dados e explore as variáveis quantitativas e qualitativas. 
+
+```{r Data Load}
 # bloco de código - item a
 library(readr)
 # NCbirths <- read_csv("NCbirths.csv", col_types = cols(Marital = col_factor(levels = c("1", 
@@ -32,7 +36,23 @@ NCbirths = read.csv("NCbirths.csv")
 str(NCbirths)
 summary(NCbirths)
 ```
+
+#### Valores ausentes
 Por inspeção visual, foi possível detectar valores ausentes nas colunas `Weeks`(1), `Smoke`(5) e `Gained`(40). Faremos avaliação de cada caso assim que der.
+
+```{r Check NA}
+col.sums = colSums(is.na(NCbirths))
+col.sums[col.sums>0]  # Verificação programática de quais colunas têm NAs
+
+NCbirths<- cbind(NCbirths, somaNulos = rowSums(is.na(NCbirths)))
+NCB_NAs = NCbirths[NCbirths$somaNulos > 0,]
+
+```
+
+Parece preocupante a grande quantidade de ausências em `Gained`, que corresponde a `r col.sums["Gained"]/nrow(NCbirths)*100`% das linhas. A estratégia ideal depende da alavancagem desses registros.
+
+
+#### Fatores
 
 Segundo a [documentação](NCbirths.html) do DataSet, várias dessas colunas podem ser convertidas em fatores:
 
@@ -55,22 +75,45 @@ NCbirths$RaceMom <- factor(NCbirths$RaceMom, levels=c(1,2,3,4,5,7,8),  # There's
                            ))
 # TODO: Check race assignments
 
-NCbirths$Smoke <- factor(NCbirths$Smoke, labels = c('N', 'Y'))
-
+NCbirths$Smoke <- factor(NCbirths$Smoke, labels = c('N', 'Y'))  # Cuidado com os NAs
 NCbirths$HispMom <- factor(NCbirths$HispMom)
+NCbirths$Premie <- factor(NCbirths$Premie, labels=c("N", "Y"))
+NCbirths$Low <- factor(NCbirths$Low, labels=c("N", "Y"))
 
 ```
 
-b.	Faça análises marginais e multivariadas.
+### b.	Faça análises marginais e multivariadas.
+
+Possíveis variáveis dependentes:
+
+- `Plural`: Categórica, pode ser uma logística por Single/Not single
+- `Gained`: Contínua
+- Tempo de gestação:
+    - `Weeks`: Discreta
+    - `Premie`: Categórica, depende de `Weeks`
+- Peso do bebê:
+    - `BirthWeightOz` ou `BirthWeightGm`, numéricas. Em Oz, parece ser apenas inteiro enquanto em g, é float.
+        - Se a conversão estiver correta, basta eliminar uma das colunas. Mas estou curioso para ver se o modelo linear vai mostrar alguma diferença inexistente.
+  - `Low`: Categórica. Adequada para logística
 
 ```{r}
 # bloco de código - item b
 
+summary(NCbirths$BirthWeightGm/NCbirths$BirthWeightOz)
+if (mean(NCbirths$BirthWeightGm/NCbirths$BirthWeightOz)/max(NCbirths$BirthWeightGm/NCbirths$BirthWeightOz) != 1 ) {
+  error("Há um erro de conversão entre Oz e g")
+} else {
+  if (max(NCbirths$BirthWeightGm/NCbirths$BirthWeightOz) == 28.35)  {
+    print("Todas as conversões de unidade estão corretas")
+  } else {
+    print("Embora consistentes, as conversões não estão corretas")
+  }
+}
 
 
 ```
 
-c.	Verifique as premissas do modelo linear.
+### c.	Verifique as premissas do modelo linear.
 
 ```{r}
 # bloco de código - item c
@@ -79,7 +122,7 @@ c.	Verifique as premissas do modelo linear.
 
 ```
 
-d.	Com base nas análises, proponha um ou mais modelos lineares multivariados. Explique a sua escolha.
+### d.	Com base nas análises, proponha um ou mais modelos lineares multivariados. Explique a sua escolha.
 
 ```{r}
 # bloco de código - item d
