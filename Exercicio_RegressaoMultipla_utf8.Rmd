@@ -96,6 +96,15 @@ Possíveis variáveis dependentes:
         - Se a conversão estiver correta, basta eliminar uma das colunas. Mas estou curioso para ver se o modelo linear vai mostrar alguma diferença inexistente.
   - `Low`: Categórica. Adequada para logística
 
+Prováveis Correlações:
+
+- A mais gritante é a do peso dos bebês, a mesma informação em duas unidades.
+- `MomRace`, `HispMom` e `MomRace` (ô povo racista!): Há grande sobreposição entre os conceitos.
+    - TODO: Verificar a sobreposição; tentar converter em uma única coluna
+- `Weeks` e `Premie`: A segunda depende completamente da primeira
+- `BirthWeight{Oz,Gm}` e `Low`: Mesmo caso: A segunda também depende completamente da primeira
+    - TODO: Verificar se todos os `Low` realmente têm peso menor que 2500g
+
 ```{r}
 # bloco de código - item b
 
