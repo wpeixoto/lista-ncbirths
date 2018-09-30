@@ -1,0 +1,66 @@
+---
+title: "Métodos Inferenciais Avançados"
+author: "Aluno"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##  Regressão Múltipla
+
+Carregue a base de dados **NCBirths**, disponível em <https://vincentarelbundock.github.io/Rdatasets/datasets.html>. 
+
+Desenvolva os itens a seguir aplicando técnicas gráficas e formais, e apresente resultados, explicações e considerações que julgar necessários.
+
+Utilize o presente documento Markdown (referências em <http://rmarkdown.rstudio.com>, <https://bookdown.org/yihui/rmarkdown/>) para a inserção do código e geração de resultados.
+
+a.	Conheça a estrutura dos dados e explore as variáveis quantitativas e qualitativas. 
+
+```{r}
+# bloco de código - item a
+
+
+
+```
+
+b.	Faça análises marginais e multivariadas.
+
+```{r}
+# bloco de código - item b
+
+
+
+```
+
+c.	Verifique as premissas do modelo linear.
+
+```{r}
+# bloco de código - item c
+
+
+
+```
+
+d.	Com base nas análises, proponha um ou mais modelos lineares multivariados. Explique a sua escolha.
+
+```{r}
+# bloco de código - item d
+
+
+
+```
+
+e.	Utilize o(s) modelo(s) proposto(s) para fazer pelo menos uma predição.
+
+```{r}
+# bloco de código - item e
+
+
+
+```
+
+## ENTREGA EM 31/10/2018, ÀS 23h59.
+
+

@@ -1,0 +1,102 @@
+---
+title: "Métodos Inferenciais Avançados"
+author: "Aluno"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##  Regressão Múltipla
+
+Carregue a base de dados **NCBirths**, disponível em <https://vincentarelbundock.github.io/Rdatasets/datasets.html>. 
+
+Desenvolva os itens a seguir aplicando técnicas gráficas e formais, e apresente resultados, explicações e considerações que julgar necessários.
+
+Utilize o presente documento Markdown (referências em <http://rmarkdown.rstudio.com>, <https://bookdown.org/yihui/rmarkdown/>) para a inserção do código e geração de resultados.
+
+a.	Conheça a estrutura dos dados e explore as variáveis quantitativas e qualitativas. 
+
+```{r}
+# bloco de código - item a
+library(readr)
+# NCbirths <- read_csv("NCbirths.csv", col_types = cols(Marital = col_factor(levels = c("1", 
+#     "2")), Plural = col_factor(levels = c("1", 
+#     "2", "3")), Sex = col_factor(levels = c("1", 
+#     "2")), Smoke = col_factor(levels = c("1", 
+#     "2")), X1 = col_skip()))
+# View(NCbirths)
+
+NCbirths = read.csv("NCbirths.csv")
+str(NCbirths)
+summary(NCbirths)
+```
+Por inspeção visual, foi possível detectar valores ausentes nas colunas `Weeks`(1), `Smoke`(5) e `Gained`(40). Faremos avaliação de cada caso assim que der.
+
+Segundo a [documentação](NCbirths.html) do DataSet, várias dessas colunas podem ser convertidas em fatores:
+
+```{r}
+# Fatorizar o que der
+NCbirths$X <- NULL
+NCbirths$Plural <- factor(NCbirths$Plural, levels=c(1,2,3), labels=c('Single', 'Twins', 'Triplets'))
+NCbirths$Sex <- factor(NCbirths$Sex, levels=c(1,2), labels=c("M", "F"))
+NCbirths$Marital <- factor(NCbirths$Marital, labels=c("Married", "Not Married"))
+NCbirths$RaceMom <- factor(NCbirths$RaceMom, levels=c(1,2,3,4,5,7,8),  # There's no Hawaiian in this base
+                           labels=c(
+                             "White",
+                             "Black",
+                             "AmericanIndian",
+                             "Chinese",
+                             "Japanese",
+                             # "Hawaiian",
+                             "Filipino",
+                             "OtherAsianOrPacific"
+                           ))
+# TODO: Check race assignments
+
+NCbirths$Smoke <- factor(NCbirths$Smoke, labels = c('N', 'Y'))
+
+NCbirths$HispMom <- factor(NCbirths$HispMom)
+
+```
+
+b.	Faça análises marginais e multivariadas.
+
+```{r}
+# bloco de código - item b
+
+
+
+```
+
+c.	Verifique as premissas do modelo linear.
+
+```{r}
+# bloco de código - item c
+
+
+
+```
+
+d.	Com base nas análises, proponha um ou mais modelos lineares multivariados. Explique a sua escolha.
+
+```{r}
+# bloco de código - item d
+
+
+
+```
+
+e.	Utilize o(s) modelo(s) proposto(s) para fazer pelo menos uma predição.
+
+```{r}
+# bloco de código - item e
+
+
+
+```
+
+## ENTREGA EM 31/10/2018, ÀS 23h59.
+
+
