@@ -88,6 +88,7 @@ Possíveis variáveis dependentes:
 
 - `Plural`: Categórica, pode ser uma logística por Single/Not single
 - `Gained`: Contínua
+  - Se for possível prever algum valor, ele pode ser usado para preencher os 40 NAs encontrados.
 - Tempo de gestação:
     - `Weeks`: Discreta
     - `Premie`: Categórica, depende de `Weeks`
@@ -121,6 +122,18 @@ if (mean(NCbirths$BirthWeightGm/NCbirths$BirthWeightOz)/max(NCbirths$BirthWeight
 
 
 ```
+
+#### Peso ganho em função das outras variáveis
+
+##### Naïve
+```{r Gained}
+
+fit_gained = lm(Gained ~ ., data=NCbirths)
+summary(fit_gained)
+
+```
+
+Curiosamente, vários campos que eu marquei para exclusão aparecem como NA no sumário, mas não todos: `Low` foi considerado, mas ficou terrivelmente insignificante.
 
 ### c.	Verifique as premissas do modelo linear.
 
