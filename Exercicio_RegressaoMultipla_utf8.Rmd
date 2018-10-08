@@ -36,6 +36,24 @@ NCbirths = read.csv("NCbirths.csv")
 str(NCbirths)
 summary(NCbirths)
 ```
+#### Erros aparentes
+
+Parece haver uma confusão no registro de raças. Há três campos para isso, e encontrei pelo menos uma inconsistência no aparente registro de mães hispânicas como japonesas:
+```{r}
+summary(NCbirths[NCbirths$MomRace=="hispanic",])
+summary(NCbirths[NCbirths$RaceMom=="Japanese",])
+```
+Aparentemente, os 164 registros de mães "japonesas" na verdade são hispânicas com a marca incorreta no campo `RaceMom` mas correto em `MomRace`. O que me leva a crer que o correto seria considerar todas como hispânicas é a variedade do campo `HispMom`, que tem apenas 3 marcadas como "Other hispanic" (e que ainda não sei se há alguma chance de serem japonesas), e a ausência de uma marca "Not hispanic".
+
+O campo `Low`, segundo a descrição, chama a atenção para bebês cujo peso ao nascer é inferior a 2500g.
+
+```{r}
+summary(NCbirths[NCbirths$Low == "Y", c("BirthWeightOz", "BirthWeightGm")])
+summary(NCbirths[NCbirths$Low == "N", c("BirthWeightOz", "BirthWeightGm")])
+```
+
+Foi confirmado que, realmente, os registros marcados como `Low==Y` todos têm peso abaixo de 2500g, e os marcados com `Low==N` todos têm peso acima do informado na documentação. Por isso, esse campo pode seguramente ser ignorado nas regressões.
+
 
 #### Valores ausentes
 Por inspeção visual, foi possível detectar valores ausentes nas colunas `Weeks`(1), `Smoke`(5) e `Gained`(40). Faremos avaliação de cada caso assim que der.
@@ -59,6 +77,7 @@ Segundo a [documentação](NCbirths.html) do DataSet, várias dessas colunas pod
 ```{r}
 # Fatorizar o que der
 NCbirths$X <- NULL
+NCbirths$ID <- NULL  
 NCbirths$Plural <- factor(NCbirths$Plural, levels=c(1,2,3), labels=c('Single', 'Twins', 'Triplets'))
 NCbirths$Sex <- factor(NCbirths$Sex, levels=c(1,2), labels=c("M", "F"))
 NCbirths$Marital <- factor(NCbirths$Marital, labels=c("Married", "Not Married"))
@@ -68,12 +87,12 @@ NCbirths$RaceMom <- factor(NCbirths$RaceMom, levels=c(1,2,3,4,5,7,8),  # There's
                              "Black",
                              "AmericanIndian",
                              "Chinese",
-                             "Japanese",
-                             # "Hawaiian",
+                             "Hispanic",  # Era "Japanese", mas foi reconsiderado
+                             # "Hawaiian",  # Não foram encontrados registros
                              "Filipino",
                              "OtherAsianOrPacific"
                            ))
-# TODO: Check race assignments
+# TODO: Check race assignments more thoroughly
 
 NCbirths$Smoke <- factor(NCbirths$Smoke, labels = c('N', 'Y'))  # Cuidado com os NAs
 NCbirths$HispMom <- factor(NCbirths$HispMom)
@@ -97,13 +116,13 @@ Possíveis variáveis dependentes:
         - Se a conversão estiver correta, basta eliminar uma das colunas. Mas estou curioso para ver se o modelo linear vai mostrar alguma diferença inexistente.
   - `Low`: Categórica. Adequada para logística
 
-Prováveis Correlações:
+Prováveis Correlações entre as colunas:
 
 - A mais gritante é a do peso dos bebês, a mesma informação em duas unidades.
 - `MomRace`, `HispMom` e `MomRace` (ô povo racista!): Há grande sobreposição entre os conceitos.
     - TODO: Verificar a sobreposição; tentar converter em uma única coluna
 - `Weeks` e `Premie`: A segunda depende completamente da primeira
-- `BirthWeight{Oz,Gm}` e `Low`: Mesmo caso: A segunda também depende completamente da primeira
+- `BirthWeight{Oz,Gm}` e `Low`: Mesmo caso: A segunda também depende completamente das primeiras
     - TODO: Verificar se todos os `Low` realmente têm peso menor que 2500g
 
 ```{r}
@@ -135,11 +154,14 @@ summary(fit_gained)
 
 Curiosamente, vários campos que eu marquei para exclusão aparecem como NA no sumário, mas não todos: `Low` foi considerado, mas ficou terrivelmente insignificante.
 
+#### Modelo melhor
+
 ### c.	Verifique as premissas do modelo linear.
 
-```{r}
+```{r fit_gained_ajustado_vs_residuo}
 # bloco de código - item c
-
+plot(predict(fit_gained), resid(fit_gained), data=NCbirths,
+     main="Valores ajustados cersus resíduos")
 
 
 ```
