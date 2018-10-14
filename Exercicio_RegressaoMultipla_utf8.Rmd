@@ -50,9 +50,16 @@ O campo `Low`, segundo a descrição, chama a atenção para bebês cujo peso ao
 ```{r}
 summary(NCbirths[NCbirths$Low == "Y", c("BirthWeightOz", "BirthWeightGm")])
 summary(NCbirths[NCbirths$Low == "N", c("BirthWeightOz", "BirthWeightGm")])
+
+# summary(NCbirths[NCbirths$BirthWeightGm > 2500, c("Low", "BirthWeightOz", "BirthWeightGm")])
+nrow(NCbirths[NCbirths$BirthWeightGm > 2500 & NCbirths$Low=='Y', c("Low", "BirthWeightOz", "BirthWeightGm")])  # Deve ser zero
+nrow(NCbirths[NCbirths$BirthWeightGm <= 2500 & NCbirths$Low=='N', c("Low", "BirthWeightOz", "BirthWeightGm")])  # Deve ser zero
+
 ```
 
-Foi confirmado que, realmente, os registros marcados como `Low==Y` todos têm peso abaixo de 2500g, e os marcados com `Low==N` todos têm peso acima do informado na documentação. Por isso, esse campo pode seguramente ser ignorado nas regressões.
+Foi confirmado que, realmente, os registros marcados como `Low==Y` todos têm peso abaixo de 2500g, e os marcados com `Low==N` todos têm peso acima do informado na documentação. De forma simétrica, nenhum registro inconsistente (isto é, com marca incorreta) foi encontrado, o que caracteriza uma dependência completa.
+
+Por isso, esse campo pode seguramente ser ignorado nas regressões.
 
 
 #### Valores ausentes
@@ -64,6 +71,7 @@ col.sums[col.sums>0]  # Verificação programática de quais colunas têm NAs
 
 NCbirths<- cbind(NCbirths, somaNulos = rowSums(is.na(NCbirths)))
 NCB_NAs = NCbirths[NCbirths$somaNulos > 0,]
+
 
 ```
 
@@ -144,17 +152,30 @@ if (mean(NCbirths$BirthWeightGm/NCbirths$BirthWeightOz)/max(NCbirths$BirthWeight
 
 #### Peso ganho em função das outras variáveis
 
-##### Naïve
-```{r Gained}
+##### Modelo 1: Naïve
+```{r Gained 1}
 
-fit_gained = lm(Gained ~ ., data=NCbirths)
-summary(fit_gained)
+fit_gained1 = lm(Gained ~ ., data=NCbirths)
+summary(fit_gained1)
+
+NCBnoNAs = NCbirths[]
 
 ```
 
 Curiosamente, vários campos que eu marquei para exclusão aparecem como NA no sumário, mas não todos: `Low` foi considerado, mas ficou terrivelmente insignificante.
 
-#### Modelo melhor
+Esse modelo explica apenas 8% do resultado. Será que existem modelos melhores?
+
+#### Modelos melhores
+
+Com base no sumário do modelo naïve, pode-se ver que os campos `Plural` e `BirthWeightOz` foram os únicos significativos.
+
+```{r}
+fit_gained2 = lm(Gained ~ Plural + BirthWeightOz, data = NCbirths)
+summary(fit_gained2)
+```
+
+Como resultado, 
 
 ### c.	Verifique as premissas do modelo linear.
 
