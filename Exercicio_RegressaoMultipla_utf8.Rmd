@@ -39,6 +39,14 @@ summary(NCbirths)
 
 Uma inspeção visual já permite identificar NAs nos campos `Weeks`, `Gained` e `Smoke`, mas os campos que a descrição diz serem categóricos foram tratados como numéricos, e seus sumários não fazem sentido.
 
+```{r Boxplots}
+boxplot(NCbirths$Gained ~ NCbirths$MomAge, main="Peso ganho por faixa etária")
+boxplot(NCbirths$Gained ~ NCbirths$Weeks, main="Peso ganho por duração da gravidez")
+
+# boxplot(NCbirths$Gained ~ NCbirths$MomRace + NCbirths$RaceMom, main='Peso ganho por "Raça"') # Pouco útil sem fatores
+
+```
+
 #### Erros aparentes
 
 Parece haver uma confusão no registro de raças. Há três campos para isso, e encontrei pelo menos uma inconsistência no aparente registro de mães hispânicas como japonesas:
@@ -92,7 +100,7 @@ Parece preocupante a grande quantidade de ausências em `Gained`, que correspond
 
 Segundo a [documentação](NCbirths.html) do DataSet, várias dessas colunas podem ser convertidas em fatores:
 
-```{r}
+```{r Fatorizar o data frame}
 # Fatorizar o que der
 
 NCB_noId = function(ncbvar) {
@@ -131,9 +139,7 @@ NCbirths = NCB_noId(NCbirths)
 NCbirths = NCB_factorize(NCbirths)
 
 
-boxplot(NCbirths$Gained ~ NCbirths$MomAge)
-boxplot(NCbirths$Gained ~ NCbirths$Weeks)
-
+# boxplot(NCbirths$Gained ~ NCbirths$MomRace + NCbirths$RaceMom, main='Peso ganho por "Raça"') # Pouco útil sem fatores
 ```
 
 ### b.	Faça análises marginais e multivariadas.
