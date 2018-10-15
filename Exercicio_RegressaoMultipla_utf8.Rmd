@@ -42,7 +42,7 @@ Uma inspeção visual já permite identificar NAs nos campos `Weeks`, `Gained` e
 #### Erros aparentes
 
 Parece haver uma confusão no registro de raças. Há três campos para isso, e encontrei pelo menos uma inconsistência no aparente registro de mães hispânicas como japonesas:
-```{r}
+```{r Verifica Raças}
 for (race in unique(NCbirths$MomRace)) { print(paste(race, nrow(NCbirths[NCbirths$MomRace == race,])))}
 
 
@@ -53,7 +53,7 @@ Aparentemente, os 164 registros de mães "japonesas" na verdade são hispânicas
 
 O campo `Low`, segundo a descrição, chama a atenção para bebês cujo peso ao nascer é inferior a 2500g.
 
-```{r}
+```{r Verifica Low}
 # summary(NCbirths[NCbirths$Low == "Y", c("BirthWeightOz", "BirthWeightGm")])
 # summary(NCbirths[NCbirths$Low == "N", c("BirthWeightOz", "BirthWeightGm")])
 
@@ -144,7 +144,7 @@ Possíveis variáveis dependentes:
     - `Premie`: Categórica, depende de `Weeks`
 - Peso do bebê:
     - `BirthWeightOz` ou `BirthWeightGm`, numéricas. Em Oz, parece ser apenas inteiro enquanto em g, é float.
-        - Se a conversão estiver correta, basta eliminar uma das colunas. Mas estou curioso para ver se o modelo linear vai mostrar alguma diferença inexistente.
+        - Se a conversão estiver correta, basta eliminar uma das colunas. <s>Mas estou curioso para ver se o modelo linear vai mostrar alguma diferença inexistente.</s>
   - `Low`: Categórica. Adequada para logística
 
 Prováveis Correlações entre as colunas:
