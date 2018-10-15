@@ -126,6 +126,10 @@ NCB_factorize = function(ncbvar) {
 NCbirths = NCB_noId(NCbirths)
 NCbirths = NCB_factorize(NCbirths)
 
+
+boxplot(NCbirths$Gained ~ NCbirths$MomAge)
+boxplot(NCbirths$Gained ~ NCbirths$Weeks)
+
 ```
 
 ### b.	Faça análises marginais e multivariadas.
@@ -173,6 +177,7 @@ if (mean(NCbirths$BirthWeightGm/NCbirths$BirthWeightOz)/max(NCbirths$BirthWeight
 
 ##### Modelo 1: Naïve
 ```{r Gained 1}
+ boxplot(NCbirths$Gained)
 
 fit_gained1 = lm(Gained ~ ., data=NCbirths)
 summary(fit_gained1)
