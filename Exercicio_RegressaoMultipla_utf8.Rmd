@@ -177,6 +177,9 @@ if (mean(NCbirths$BirthWeightGm/NCbirths$BirthWeightOz)/max(NCbirths$BirthWeight
 fit_gained1 = lm(Gained ~ ., data=NCbirths)
 summary(fit_gained1)
 
+# pairs(Gained ~ ., data=NCbirths)
+pairs(Gained ~ Plural + MomAge + Weeks + BirthWeightOz, data=NCbirths)
+
 # fit_gained1_noNAs = lm(Gained ~ ., data=NCbirths, na.action = na.omit) 
 # summary(fit_gained1_noNAs)
 
