@@ -46,8 +46,12 @@ Parece haver uma confusão no registro de raças. Há três campos para isso, e 
 for (race in unique(NCbirths$MomRace)) { print(paste(race, nrow(NCbirths[NCbirths$MomRace == race,])))}
 
 
-summary(NCbirths[NCbirths$MomRace=="hispanic",])
-nrow(NCbirths[NCbirths$MomRace==5,])  # "Japanese", só que não
+summary(NCbirths[NCbirths$MomRace=="hispanic", c("RaceMom", "HispMom")])
+JapasSoQueNao = nrow(NCbirths[NCbirths$RaceMom==5,])  # "Japanese", só que não
+print(paste("Registros marcados como mães japonesas: ", JapasSoQueNao))
+
+print("Mães com RaceMom == 5")
+summary(NCbirths[NCbirths$RaceMom==5, c("MomRace", "HispMom")])
 ```
 Aparentemente, os 164 registros de mães "japonesas" na verdade são hispânicas com a marca incorreta no campo `RaceMom` mas correto em `MomRace`. O que me leva a crer que o correto seria considerar todas como hispânicas é a variedade do campo `HispMom`, que tem apenas 3 marcadas como "Other hispanic" (e que ainda não sei se há alguma chance de serem japonesas), e a ausência de uma marca "Not hispanic".
 
