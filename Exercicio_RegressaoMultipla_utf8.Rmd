@@ -138,6 +138,9 @@ NCB_factorize = function(ncbvar) {
 NCbirths = NCB_noId(NCbirths)
 NCbirths = NCB_factorize(NCbirths)
 
+```
+
+```{r Mais análises}
 
 # boxplot(NCbirths$Gained ~ NCbirths$MomRace + NCbirths$RaceMom, main='Peso ganho por "Raça"') # Pouco útil sem fatores
 ```
@@ -188,6 +191,8 @@ if (mean(NCbirths$BirthWeightGm/NCbirths$BirthWeightOz)/max(NCbirths$BirthWeight
 ##### Modelo 1: Naïve
 ```{r Gained 1}
  boxplot(NCbirths$Gained)
+df1 = transform(NCbirths, group=cut(MomAge, breaks = c(-Inf, 18, 24, 30, 35, 40, +Inf), labels = c('<19', '19-24', '25-29', '30-35', '36-40', '>40')))
+boxplot(df1$Gained ~ df1$group, main="GAnho de peso por faixa etária", sub="Há pouca variação")
 
 fit_gained1 = lm(Gained ~ ., data=NCbirths)
 summary(fit_gained1)
@@ -244,6 +249,10 @@ e.	Utilize o(s) modelo(s) proposto(s) para fazer pelo menos uma predição.
 
 
 ```
+
+## Suspeitas
+
+Até agora, parece não haver evidências suficientes para compor um modelo linear do peso ganho em função de algumas das outras variáveis.
 
 ## ENTREGA EM 31/10/2018, ÀS 23h59.
 
