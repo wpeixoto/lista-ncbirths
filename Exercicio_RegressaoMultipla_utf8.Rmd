@@ -36,20 +36,26 @@ NCbirths = read.csv("NCbirths.csv")
 str(NCbirths)
 summary(NCbirths)
 ```
+
+Uma inspeção visual já permite identificar NAs nos campos `Weeks`, `Gained` e `Smoke`, mas os campos que a descrição diz serem categóricos foram tratados como numéricos, e seus sumários não fazem sentido.
+
 #### Erros aparentes
 
 Parece haver uma confusão no registro de raças. Há três campos para isso, e encontrei pelo menos uma inconsistência no aparente registro de mães hispânicas como japonesas:
 ```{r}
+for (race in unique(NCbirths$MomRace)) { print(paste(race, nrow(NCbirths[NCbirths$MomRace == race,])))}
+
+
 summary(NCbirths[NCbirths$MomRace=="hispanic",])
-summary(NCbirths[NCbirths$RaceMom=="Japanese",])
+nrow(NCbirths[NCbirths$MomRace==5,])  # "Japanese", só que não
 ```
 Aparentemente, os 164 registros de mães "japonesas" na verdade são hispânicas com a marca incorreta no campo `RaceMom` mas correto em `MomRace`. O que me leva a crer que o correto seria considerar todas como hispânicas é a variedade do campo `HispMom`, que tem apenas 3 marcadas como "Other hispanic" (e que ainda não sei se há alguma chance de serem japonesas), e a ausência de uma marca "Not hispanic".
 
 O campo `Low`, segundo a descrição, chama a atenção para bebês cujo peso ao nascer é inferior a 2500g.
 
 ```{r}
-summary(NCbirths[NCbirths$Low == "Y", c("BirthWeightOz", "BirthWeightGm")])
-summary(NCbirths[NCbirths$Low == "N", c("BirthWeightOz", "BirthWeightGm")])
+# summary(NCbirths[NCbirths$Low == "Y", c("BirthWeightOz", "BirthWeightGm")])
+# summary(NCbirths[NCbirths$Low == "N", c("BirthWeightOz", "BirthWeightGm")])
 
 # summary(NCbirths[NCbirths$BirthWeightGm > 2500, c("Low", "BirthWeightOz", "BirthWeightGm")])
 nrow(NCbirths[NCbirths$BirthWeightGm > 2500 & NCbirths$Low=='Y', c("Low", "BirthWeightOz", "BirthWeightGm")])  # Deve ser zero
@@ -71,7 +77,7 @@ col.sums[col.sums>0]  # Verificação programática de quais colunas têm NAs
 
 NCbirths<- cbind(NCbirths, somaNulos = rowSums(is.na(NCbirths)))
 NCB_NAs = NCbirths[NCbirths$somaNulos > 0,]
-
+NCBnoNAs = NCbirths[complete.cases(NCbirths),]
 
 ```
 
@@ -92,7 +98,7 @@ NCB_noId = function(ncbvar) {
 }
 
 
-NCB_factorize(ncbvar) {
+NCB_factorize = function(ncbvar) {
     ncbvar$Plural <- factor(ncbvar$Plural, levels=c(1,2,3), labels=c('Single', 'Twins', 'Triplets'))
     ncbvar$Sex <- factor(ncbvar$Sex, levels=c(1,2), labels=c("M", "F"))
     ncbvar$Marital <- factor(ncbvar$Marital, labels=c("Married", "Not Married"))
@@ -171,7 +177,10 @@ if (mean(NCbirths$BirthWeightGm/NCbirths$BirthWeightOz)/max(NCbirths$BirthWeight
 fit_gained1 = lm(Gained ~ ., data=NCbirths)
 summary(fit_gained1)
 
-NCBnoNAs = NCbirths[]
+# fit_gained1_noNAs = lm(Gained ~ ., data=NCbirths, na.action = na.omit) 
+# summary(fit_gained1_noNAs)
+
+# NCBnoNAs = NCbirths[]
 
 ```
 
@@ -194,8 +203,8 @@ Como resultado,
 
 ```{r fit_gained_ajustado_vs_residuo}
 # bloco de código - item c
-plot(predict(fit_gained), resid(fit_gained), data=NCbirths,
-     main="Valores ajustados cersus resíduos")
+plot(predict(fit_gained1), resid(fit_gained1),   # data=NCbirths,
+     main="Valores ajustados versus resíduos")
 
 
 ```
