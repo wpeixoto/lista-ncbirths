@@ -57,7 +57,7 @@ Parece haver uma confusão no registro de raças. Há três campos para isso, e 
 for (race in unique(NCbirths$MomRace)) { print(paste(race, nrow(NCbirths[NCbirths$MomRace == race,])))}
 
 
-summary(NCbirths[NCbirths$MomRace=="hispanic", c("RaceMom", "HispMom")])
+summary(NCbirths[NCbirths$MomRace=="hispanic", c("RaceMom", "HispMom")])  # Mostra que `RaceMom` é 5 para todas com `MomRace == hispanic`
 JapasSoQueNao = nrow(NCbirths[NCbirths$RaceMom==5,])  # "Japanese", só que não
 print(paste("Registros marcados como mães japonesas: ", JapasSoQueNao))
 
