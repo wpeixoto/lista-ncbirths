@@ -189,11 +189,14 @@ if (mean(NCbirths$BirthWeightGm/NCbirths$BirthWeightOz)/max(NCbirths$BirthWeight
 #### Peso ganho em função das outras variáveis
 
 ##### Modelo 1: Naïve
-```{r Gained 1}
+```{r Gained expl}
  boxplot(NCbirths$Gained)
 df1 = transform(NCbirths, group=cut(MomAge, breaks = c(-Inf, 18, 24, 30, 35, 40, +Inf), labels = c('<19', '19-24', '25-29', '30-35', '36-40', '>40')))
-boxplot(df1$Gained ~ df1$group, main="GAnho de peso por faixa etária", sub="Há pouca variação")
+boxplot(df1$Gained ~ df1$group, main="Ganho de peso por faixa etária", sub="Há pouca variação aparente")
 
+```
+
+```{r Gained 1}
 fit_gained1 = lm(Gained ~ ., data=NCbirths)
 summary(fit_gained1)
 
