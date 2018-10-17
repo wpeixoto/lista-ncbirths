@@ -5,8 +5,8 @@ output:
   html_document:
     toc: True
     number_sections: true
-    theme: spacelab
-    highlight: pygments
+    theme: cosmo
+    highlight: zenburn  # espresso  # pygments
 ---
 
 ```{r setup, include=FALSE}
@@ -27,26 +27,22 @@ a. Conheça a estrutura dos dados e explore as variáveis quantitativas e qualit
 
 ```{r Data Load}
 # bloco de código - item a
-library(readr)
-# NCbirths <- read_csv("NCbirths.csv", col_types = cols(Marital = col_factor(levels = c("1", 
-#     "2")), Plural = col_factor(levels = c("1", 
-#     "2", "3")), Sex = col_factor(levels = c("1", 
-#     "2")), Smoke = col_factor(levels = c("1", 
-#     "2")), X1 = col_skip()))
-# View(NCbirths)
+
 
 NCbirths = read.csv("NCbirths.csv")
-str(NCbirths)
-summary(NCbirths)
+nc_births = NCbirths
+str(nc_births)
+summary(nc_births)
 ```
 
 Uma inspeção visual já permite identificar NAs nos campos `Weeks`, `Gained` e `Smoke`, mas os campos que a descrição diz serem categóricos foram tratados como numéricos, e seus sumários não fazem sentido.
 
-```{r Boxplots}
-boxplot(NCbirths$Gained ~ NCbirths$MomAge, main="Peso ganho por faixa etária")
-boxplot(NCbirths$Gained ~ NCbirths$Weeks, main="Peso ganho por duração da gravidez")
+### Correlações simples
+```{r Boxplots, echo=FALSE}
+boxplot(nc_births$Gained ~ nc_births$MomAge, main="Peso ganho por faixa etária")
+boxplot(nc_births$Gained ~ nc_births$Weeks, main="Peso ganho por duração da gravidez")
 
-# boxplot(NCbirths$Gained ~ NCbirths$MomRace + NCbirths$RaceMom, main='Peso ganho por "Raça"') # Pouco útil sem fatores
+# boxplot(nc_births$Gained ~ nc_births$MomRace + nc_births$RaceMom, main='Peso ganho por "Raça"') # Pouco útil sem fatores
 
 ```
 
@@ -54,27 +50,27 @@ boxplot(NCbirths$Gained ~ NCbirths$Weeks, main="Peso ganho por duração da grav
 
 Parece haver uma confusão no registro de raças. Há três campos para isso, e encontrei pelo menos uma inconsistência no aparente registro de mães hispânicas como japonesas:
 ```{r Verifica Raças}
-for (race in unique(NCbirths$MomRace)) { print(paste(race, nrow(NCbirths[NCbirths$MomRace == race,])))}
+for (race in unique(nc_births$MomRace)) { print(paste(race, nrow(nc_births[nc_births$MomRace == race,])))}
 
 
-summary(NCbirths[NCbirths$MomRace=="hispanic", c("RaceMom", "HispMom")])  # Mostra que `RaceMom` é 5 para todas com `MomRace == hispanic`
-JapasSoQueNao = nrow(NCbirths[NCbirths$RaceMom==5,])  # "Japanese", só que não
+summary(nc_births[nc_births$MomRace=="hispanic", c("RaceMom", "HispMom")])  # Mostra que `RaceMom` é 5 para todas com `MomRace == hispanic`
+JapasSoQueNao = nrow(nc_births[nc_births$RaceMom==5,])  # "Japanese", só que não
 print(paste("Registros marcados como mães japonesas: ", JapasSoQueNao))
 
 print("Mães com RaceMom == 5")
-summary(NCbirths[NCbirths$RaceMom==5, c("MomRace", "HispMom")])
+summary(nc_births[nc_births$RaceMom==5, c("MomRace", "HispMom")])
 ```
 Aparentemente, os 164 registros de mães "japonesas" na verdade são hispânicas com a marca incorreta no campo `RaceMom` mas correto em `MomRace`. O que me leva a crer que o correto seria considerar todas como hispânicas é a variedade do campo `HispMom`, que tem apenas 3 marcadas como "Other hispanic" (e que ainda não sei se há alguma chance de serem japonesas), e a ausência de uma marca "Not hispanic".
 
 O campo `Low`, segundo a descrição, chama a atenção para bebês cujo peso ao nascer é inferior a 2500g.
 
 ```{r Verifica Low}
-# summary(NCbirths[NCbirths$Low == "Y", c("BirthWeightOz", "BirthWeightGm")])
-# summary(NCbirths[NCbirths$Low == "N", c("BirthWeightOz", "BirthWeightGm")])
+# summary(nc_births[nc_births$Low == "Y", c("BirthWeightOz", "BirthWeightGm")])
+# summary(nc_births[nc_births$Low == "N", c("BirthWeightOz", "BirthWeightGm")])
 
-# summary(NCbirths[NCbirths$BirthWeightGm > 2500, c("Low", "BirthWeightOz", "BirthWeightGm")])
-nrow(NCbirths[NCbirths$BirthWeightGm > 2500 & NCbirths$Low=='Y', c("Low", "BirthWeightOz", "BirthWeightGm")])  # Deve ser zero
-nrow(NCbirths[NCbirths$BirthWeightGm <= 2500 & NCbirths$Low=='N', c("Low", "BirthWeightOz", "BirthWeightGm")])  # Deve ser zero
+# summary(nc_births[nc_births$BirthWeightGm > 2500, c("Low", "BirthWeightOz", "BirthWeightGm")])
+nrow(nc_births[nc_births$BirthWeightGm > 2500 & nc_births$Low=='Y', c("Low", "BirthWeightOz", "BirthWeightGm")])  # Deve ser zero
+nrow(nc_births[nc_births$BirthWeightGm <= 2500 & nc_births$Low=='N', c("Low", "BirthWeightOz", "BirthWeightGm")])  # Deve ser zero
 
 ```
 
@@ -87,21 +83,21 @@ Por isso, esse campo pode seguramente ser ignorado nas regressões.
 Por inspeção visual, foi possível detectar valores ausentes nas colunas `Weeks`(1), `Smoke`(5) e `Gained`(40). Faremos avaliação de cada caso assim que der.
 
 ```{r Check NA}
-col.sums = colSums(is.na(NCbirths))
+col.sums = colSums(is.na(nc_births))
 col.sums[col.sums>0]  # Verificação programática de quais colunas têm NAs
 
-NCbirths<- cbind(NCbirths, somaNulos = rowSums(is.na(NCbirths)))
-NCB_NAs = NCbirths[NCbirths$somaNulos > 0,]
-NCBnoNAs = NCbirths[complete.cases(NCbirths),]
+nc_births<- cbind(nc_births, somaNulos = rowSums(is.na(nc_births)))
+NCB_NAs = nc_births[nc_births$somaNulos > 0,]
+NCBnoNAs = nc_births[complete.cases(nc_births),]
 
 ```
 
-Parece preocupante a grande quantidade de ausências em `Gained`, que corresponde a `r col.sums["Gained"]/nrow(NCbirths)*100`% das linhas. A estratégia ideal depende da alavancagem desses registros.
+Parece preocupante a grande quantidade de ausências em `Gained`, que corresponde a `r col.sums["Gained"]/nrow(nc_births)*100`% das linhas. A estratégia ideal depende da alavancagem desses registros.
 
 
 ### Fatores
 
-Segundo a [documentação](NCbirths.html) do DataSet, várias dessas colunas podem ser convertidas em fatores:
+Segundo a [documentação](nc_births.html) do DataSet, várias dessas colunas podem ser convertidas em fatores:
 
 ```{r Fatorizar o data frame}
 # Fatorizar o que der
@@ -138,14 +134,14 @@ NCB_factorize = function(ncbvar) {
     return(ncbvar)
 }
 
-NCbirths = NCB_noId(NCbirths)
-NCbirths = NCB_factorize(NCbirths)
+nc_births = NCB_noId(nc_births)
+nc_births = NCB_factorize(nc_births)
 
 ```
 
 ```{r Mais análises}
 
-# boxplot(NCbirths$Gained ~ NCbirths$MomRace + NCbirths$RaceMom, main='Peso ganho por "Raça"') # Pouco útil sem fatores
+# boxplot(nc_births$Gained ~ nc_births$MomRace + nc_births$RaceMom, main='Peso ganho por "Raça"') # Pouco útil sem fatores
 ```
 
 ## b.	Faça análises marginais e multivariadas.
@@ -175,11 +171,11 @@ Prováveis Correlações entre as colunas:
 ```{r}
 # bloco de código - item b
 
-summary(NCbirths$BirthWeightGm/NCbirths$BirthWeightOz)
-if (mean(NCbirths$BirthWeightGm/NCbirths$BirthWeightOz)/max(NCbirths$BirthWeightGm/NCbirths$BirthWeightOz) != 1 ) {
+summary(nc_births$BirthWeightGm/nc_births$BirthWeightOz)
+if (mean(nc_births$BirthWeightGm/nc_births$BirthWeightOz)/max(nc_births$BirthWeightGm/nc_births$BirthWeightOz) != 1 ) {
   error("Há um erro de conversão entre Oz e g")
 } else {
-  if (max(NCbirths$BirthWeightGm/NCbirths$BirthWeightOz) == 28.35)  {
+  if (max(nc_births$BirthWeightGm/nc_births$BirthWeightOz) == 28.35)  {
     print("Todas as conversões de unidade estão corretas")
   } else {
     print("Embora consistentes, as conversões não estão corretas")
@@ -193,21 +189,21 @@ if (mean(NCbirths$BirthWeightGm/NCbirths$BirthWeightOz)/max(NCbirths$BirthWeight
 
 #### Modelo 1: Naïve
 ```{r Gained expl}
- boxplot(NCbirths$Gained)
-df1 = transform(NCbirths, group=cut(MomAge, breaks = c(-Inf, 18, 24, 30, 35, 40, +Inf), labels = c('<19', '19-24', '25-29', '30-35', '36-40', '>40')))
+ boxplot(nc_births$Gained)
+df1 = transform(nc_births, group=cut(MomAge, breaks = c(-Inf, 18, 24, 30, 35, 40, +Inf), labels = c('<19', '19-24', '25-29', '30-35', '36-40', '>40')))
 boxplot(df1$Gained ~ df1$group, main="Ganho de peso por faixa etária", sub="Há pouca variação aparente")
 
-hist(NCbirths$Gained, density = 10, breaks = 30)
-sw_gained = shapiro.test(NCbirths$Gained)
+hist(nc_births$Gained, density = 10, breaks = 30)
+sw_gained = shapiro.test(nc_births$Gained)
 
-gained_mean = mean(NCbirths$Gained, na.rm = T)
+gained_mean = mean(nc_births$Gained, na.rm = T)
 
 ```
 
-A distribuição das frequências de pesos ganhos parece ser normal, com média `r gained_mean` e desvio padrão `r sd(NCbirths$Gained, na.rm=T)` (apenas os valores presentes. 40 estão faltando), o resultado de um teste Shapiro-Wil é `r sw_gained$statistic` com p < 5% (`r sw_gained$p.value`).
+A distribuição das frequências de pesos ganhos parece ser normal, com média `r gained_mean` e desvio padrão `r sd(nc_births$Gained, na.rm=T)` (apenas os valores presentes. 40 estão faltando), o resultado de um teste Shapiro-Wil é `r sw_gained$statistic` com p < 5% (`r sw_gained$p.value`).
 
 ```{r Gained 1}
-fit_gained1 = lm(Gained ~ ., data=NCbirths)
+fit_gained1 = lm(Gained ~ ., data=nc_births)
 summary(fit_gained1)
 
 ```
@@ -216,40 +212,48 @@ Curiosamente, vários campos que eu marquei para exclusão aparecem como NA no s
 Esse modelo explica apenas 8% do resultado. Será que existem modelos melhores?
 ```{r Gained 2}
 
-# pairs(Gained ~ ., data=NCbirths)
+# pairs(Gained ~ ., data=nc_births)
 pairs(Gained ~ Plural + MomAge + Weeks + BirthWeightOz, 
-      data=NCbirths,
+      data=nc_births,
       main = "Correlações entre os campos mais significativos"
       )
 
-# fit_gained1_noNAs = lm(Gained ~ ., data=NCbirths, na.action = na.omit) 
+# fit_gained1_noNAs = lm(Gained ~ ., data=nc_births, na.action = na.omit) 
 # summary(fit_gained1_noNAs)
 
-# NCBnoNAs = NCbirths[]
+# NCBnoNAs = nc_births[]
 
 ```
 
 Não parece haver correlação nenhuma entre esses campos! O único padrão relevante é a já conhecida relação entre a idade gestacional do nascituro e o peso ao nascer: quanto mais próximo do termo (40 semanas), mais pesado; depois do termo, nem tanto.
 
-### Modelos melhores
+### Modelo 2: Menos é mais
 
 Com base no sumário do modelo naïve, pode-se ver que os campos `Plural` e `BirthWeightOz` foram os únicos significativos.
 
 ```{r}
-fit_gained2 = lm(Gained ~ Plural + BirthWeightOz, data = NCbirths)
+fit_gained2 = lm(Gained ~ Plural + BirthWeightOz, data = nc_births)
 summary(fit_gained2)
 ```
 
 Como resultado, todos os coeficientes são altamente significativos, mas o poder de explicação caiu para 6,34%
 
+
+### Modelo 3: Peso do bebê
+
+```{r}
+
+```
+
+
 ## c.	Verifique as premissas do modelo linear.
 
 ```{r fit_gained_ajustado_vs_residuo}
 # bloco de código - item c
-plot(predict(fit_gained1), resid(fit_gained1),   # data=NCbirths,
+plot(predict(fit_gained1), resid(fit_gained1),   # data=nc_births,
      main="Valores ajustados versus resíduos para modelo Naïve")
 
-plot(predict(fit_gained2), resid(fit_gained2),   # data=NCbirths,
+plot(predict(fit_gained2), resid(fit_gained2),   # data=nc_births,
      main="Valores ajustados versus resíduos para modelo 2 (aprimorado)")
 
 
@@ -277,7 +281,9 @@ e.	Utilize o(s) modelo(s) proposto(s) para fazer pelo menos uma predição.
 
 # Suspeitas
 
-Até agora, parece não haver evidências suficientes para compor um modelo linear do peso ganho em função de algumas das outras variáveis.
+Até agora, parece não haver evidências suficientes para compor um modelo linear do peso ganho em função de algumas das outras variáveis. O máximo possível de explicação é de 8% com todos os campos, e vários deles geram coeficientes sem significância estatística ($p>5\%$).
+
+Quando passei a considerar o peso do bebê ao nascer (BirthWeightOz) como variável dependente, obtive modelos com maior poder de predição ($ {R_{ajust}}^2 > 40\%$)
 
 ## ENTREGA EM 31/10/2018, ÀS 23h59.
 
