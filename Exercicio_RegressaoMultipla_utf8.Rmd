@@ -5,8 +5,8 @@ output:
   html_document:
     toc: True
     number_sections: true
-    theme: spacelab
-    highlight: pygments
+    theme: cosmo
+    highlight: espresso  # pygments
 ---
 
 ```{r setup, include=FALSE}
@@ -42,7 +42,8 @@ summary(NCbirths)
 
 Uma inspeção visual já permite identificar NAs nos campos `Weeks`, `Gained` e `Smoke`, mas os campos que a descrição diz serem categóricos foram tratados como numéricos, e seus sumários não fazem sentido.
 
-```{r Boxplots}
+### Correlações simples
+```{r Boxplots, echo=FALSE}
 boxplot(NCbirths$Gained ~ NCbirths$MomAge, main="Peso ganho por faixa etária")
 boxplot(NCbirths$Gained ~ NCbirths$Weeks, main="Peso ganho por duração da gravidez")
 
