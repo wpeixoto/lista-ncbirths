@@ -137,6 +137,9 @@ NCB_factorize = function(ncbvar) {
 nc_births = NCB_noId(nc_births)
 nc_births = NCB_factorize(nc_births)
 
+ncb_births_noGainedNA = nc_births[!is.na(nc_births$Gained), ]
+ncb_births_noGainedNA = ncb_births_noGainedNA[ncb_births_noGainedNA$somaNulos == 0, ]
+
 ```
 
 ```{r Mais análises}
@@ -200,10 +203,10 @@ gained_mean = mean(nc_births$Gained, na.rm = T)
 
 ```
 
-A distribuição das frequências de pesos ganhos parece ser normal, com média `r gained_mean` e desvio padrão `r sd(nc_births$Gained, na.rm=T)` (apenas os valores presentes. 40 estão faltando), o resultado de um teste Shapiro-Wil é `r sw_gained$statistic` com p < 5% (`r sw_gained$p.value`).
+A distribuição das frequências de pesos ganhos parece ser normal, com média `r gained_mean` e desvio padrão `r sd(nc_births$Gained, na.rm=T)` (apenas os valores presentes. 40 estão faltando), o resultado de um teste Shapiro-Wil é `r sw_gained$statistic` com $p < 5\%$ (`r sw_gained$p.value`).
 
 ```{r Gained 1}
-fit_gained1 = lm(Gained ~ ., data=nc_births)
+fit_gained1 = lm(Gained ~ ., data=ncb_births_noGainedNA)
 summary(fit_gained1)
 
 ```
@@ -232,11 +235,14 @@ Não parece haver correlação nenhuma entre esses campos! O único padrão rele
 Com base no sumário do modelo naïve, pode-se ver que os campos `Plural` e `BirthWeightOz` foram os únicos significativos.
 
 ```{r}
-fit_gained2 = lm(Gained ~ Plural + BirthWeightOz, data = nc_births)
+fit_gained2 = lm(Gained ~ Plural + BirthWeightOz, data = ncb_births_noGainedNA)
 summary(fit_gained2)
+
+anova(fit_gained1, fit_gained2)
+
 ```
 
-Como resultado, todos os coeficientes são altamente significativos, mas o poder de explicação caiu para 6,34%
+Como resultado, todos os coeficientes são altamente significativos, e a análise de variância informa uma queda de mais de 8000 pontos na soma dos quadrados dos resíduos. Entretanto, o poder de explicação caiu para 6,34%. 
 
 
 ### Modelo 3: Peso do bebê
