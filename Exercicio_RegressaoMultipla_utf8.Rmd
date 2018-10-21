@@ -158,20 +158,33 @@ ncb_births_noGainedNA = ncb_births_noGainedNA[ncb_births_noGainedNA$somaNulos ==
 
 ## b.	Faça análises marginais e multivariadas.
 
-Possíveis variáveis dependentes:
+### Possíveis variáveis dependentes
+
+Não foi especificado um problema para ser estudado. Vejamos como cada campo poderia ser interpretado se fosse a variável dependente. Há dois grupos: Características da mãe e as da gestação e bebê:
+
+#### Maternas
+
+- `MomAge`: Embora se apresente como numérica discreta, pode ser considerada contínua.
+- `Marital`: Categórica com apenas dois valores (Casada ou não)
+- Dados "raciais": `MomRace`, `RaceMom` e `HispMom`, todos categóricos
+- `Smoke`, categórico
+- `Gained`, apesar de ser o peso ganho pela mãe, foi considerado parte da gestação e comentado na seção seguinte
+
+#### Gestação e bebê
 
 - `Plural`: Categórica, pode ser uma logística por Single/Not single
+- `Sex`: Categórica, também pode ser uma logística por Male/Female
 - `Gained`: Contínua
   - Se for possível prever algum valor, ele pode ser usado para preencher os 40 NAs encontrados.
 - Tempo de gestação:
-    - `Weeks`: Discreta
+    - `Weeks`: Numérica discreta
     - `Premie`: Categórica, depende de `Weeks`
 - Peso do bebê:
     - `BirthWeightOz` ou `BirthWeightGm`, numéricas. Em Oz, parece ser apenas inteiro enquanto em g, é float.
         - Se a conversão estiver correta, basta eliminar uma das colunas. <s>Mas estou curioso para ver se o modelo linear vai mostrar alguma diferença inexistente.</s>
-  - `Low`: Categórica. Adequada para logística
+  - `Low`: Categórica. Adequada para logística. Depende integralmente do peso do bebê.
 
-Prováveis Correlações entre as colunas:
+### Prováveis Correlações entre as colunas
 
 - A mais gritante é a do peso dos bebês, a mesma informação em duas unidades.
 - `MomRace`, `HispMom` e `MomRace` (ô povo racista!): Há grande sobreposição entre os conceitos.
