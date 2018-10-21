@@ -142,7 +142,7 @@ ncb_births_noGainedNA = ncb_births_noGainedNA[ncb_births_noGainedNA$somaNulos ==
 
 # Remover coluna desnecessária
 ncb_births_noGainedNA$somaNulos <- NULL
-ncb_births$somaNulos <- NULL
+nc_births$somaNulos <- NULL
 ```
 
 ```{r Mais análises}
@@ -176,6 +176,7 @@ Não foi especificado um problema para ser estudado. Vejamos como cada campo pod
 - Peso do bebê:
     - `BirthWeightOz` ou `BirthWeightGm`, numéricas. Em Oz, parece ser apenas inteiro enquanto em g, é float.
         - Se a conversão estiver correta, basta eliminar uma das colunas. <s>Mas estou curioso para ver se o modelo linear vai mostrar alguma diferença inexistente.</s>
+        - A documentação não diz como interpretar esses valores no caso de gravidez múltipla (`Plural`!= "Single")
   - `Low`: Categórica. Adequada para logística. Depende integralmente do peso do bebê.
 
 ### Prováveis Correlações entre as colunas
@@ -186,6 +187,14 @@ Não foi especificado um problema para ser estudado. Vejamos como cada campo pod
 - `Weeks` e `Premie`: A segunda depende completamente da primeira
 - `BirthWeight{Oz,Gm}` e `Low`: Mesmo caso: A segunda também depende completamente das primeiras
     - TODO: <s>Verificar se todos os `Low` realmente têm peso menor que 2500g</s>
+
+### Escolhas disponíveis
+
+|   | Numéricas   | Categóricas  |   |   |
+|---|---|---|---|---|
+|   |   |   |   |   |
+|   |   |   |   |   |
+|   |   |   |   |   |
 
 ```{r}
 # bloco de código - item b
@@ -263,6 +272,7 @@ Como resultado, todos os coeficientes são altamente significativos, e a anális
 
 ### Modelo 3: Peso do bebê
 
+s
 ```{r}
 
 ```
