@@ -6,7 +6,11 @@ output:
     toc: True
     number_sections: true
     theme: cosmo
+<<<<<<< HEAD
     highlight: zenburn  # espresso  # pygments
+=======
+    highlight: espresso  # pygments
+>>>>>>> b0cb67285a3e3adf54647ee24c6b6e0c44a9dacd
 ---
 
 ```{r setup, include=FALSE}
@@ -39,8 +43,13 @@ Uma inspeção visual já permite identificar NAs nos campos `Weeks`, `Gained` e
 
 ### Correlações simples
 ```{r Boxplots, echo=FALSE}
+<<<<<<< HEAD
 boxplot(nc_births$Gained ~ nc_births$MomAge, main="Peso ganho por faixa etária")
 boxplot(nc_births$Gained ~ nc_births$Weeks, main="Peso ganho por duração da gravidez")
+=======
+boxplot(NCbirths$Gained ~ NCbirths$MomAge, main="Peso ganho por faixa etária")
+boxplot(NCbirths$Gained ~ NCbirths$Weeks, main="Peso ganho por duração da gravidez")
+>>>>>>> b0cb67285a3e3adf54647ee24c6b6e0c44a9dacd
 
 # boxplot(nc_births$Gained ~ nc_births$MomRace + nc_births$RaceMom, main='Peso ganho por "Raça"') # Pouco útil sem fatores
 
