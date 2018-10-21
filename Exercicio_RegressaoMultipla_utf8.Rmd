@@ -140,6 +140,9 @@ nc_births = NCB_factorize(nc_births)
 ncb_births_noGainedNA = nc_births[!is.na(nc_births$Gained), ]
 ncb_births_noGainedNA = ncb_births_noGainedNA[ncb_births_noGainedNA$somaNulos == 0, ]
 
+# Remover coluna desnecessária
+ncb_births_noGainedNA$somaNulos <- NULL
+ncb_births$somaNulos <- NULL
 ```
 
 ```{r Mais análises}
