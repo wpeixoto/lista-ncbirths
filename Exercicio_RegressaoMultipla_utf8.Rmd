@@ -190,12 +190,17 @@ Não foi especificado um problema para ser estudado. Vejamos como cada campo pod
 
 ### Escolhas disponíveis
 
-|   | Numéricas   | Categóricas  |   |   |
-|---|---|---|---|---|
-|   |   |   |   |   |
-|   |   |   |   |   |
-|   |   |   |   |   |
+|          | Numéricas            | Categóricas                  |
+|----------|----------------------|------------------------------|
+| Mãe      |  `Gained`¹, `MomAge` | `Smoke`, `Marital`, "raças"³ |
+| Gestação | `Gained`¹, `Weeks`   | `Plural`, `Premie`           |
+| Bebê     | Peso²                | `Sex`, `Low`                 |
 
+<div style='font-size:x-small'>
+1 - Quem ganha o peso é a mãe, mas isso decorre da gravidez  
+2 - O peso é dado em duas unidades, basta ignorar uma delas  
+3 - Geneticamente, o conceito de raça humana [não existe](https://www.eurekalert.org/pub_releases/1998-10/WUiS-GSRD-071098.php), mas [culturalmente](https://en.wikipedia.org/wiki/Race_%28human_categorization%29) a distinção pode ser importante, como no caso do local da origem desses dados.
+</div>
 ```{r}
 # bloco de código - item b
 
