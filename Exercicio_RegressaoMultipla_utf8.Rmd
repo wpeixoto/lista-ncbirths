@@ -1,12 +1,13 @@
 ---
-title: "Métodos Inferenciais Avançados"
+title: "Exercício de Métodos Inferenciais Avançados 2/18"
 author: "William Peixoto"
+date: "knit mais recente: `r format(Sys.Date(), format = '%d de %B %Y')`" 
 output: 
   html_document:
-    toc: True
-    number_sections: true
     theme: cosmo  # TODO Achar um tema com melhor contraste nos resultados dos blocos
     highlight: zenburn  # espresso  # pygments
+    toc: True
+    number_sections: true
 ---
 
 ```{r setup, include=FALSE}
