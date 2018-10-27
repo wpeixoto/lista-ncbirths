@@ -202,7 +202,9 @@ nc_births$somaNulos <- NULL
 # boxplot(nc_births$Gained ~ nc_births$MomRace + nc_births$RaceMom, main='Peso ganho por "Raça"') # Pouco útil sem fatores
 ```
 
-## b.	<span class="comando">Faça análises marginais e multivariadas. </span>
+## Análises marginais e multivariadas {.tabset .tabset-fade } <!--.tabset-pills} -->
+
+b.	<span class="comando">Faça análises marginais e multivariadas. </span>
 
 
 ### Peso ganho em função das outras variáveis
@@ -247,7 +249,7 @@ pairs(Gained ~ Plural + MomAge + Weeks + BirthWeightOz,
 
 Não parece haver correlação nenhuma entre esses campos! O único padrão relevante é a já conhecida relação entre a idade gestacional do nascituro e o peso ao nascer: quanto mais próximo do termo (40 semanas), mais pesado; depois do termo, nem tanto.
 
-### Modelo 2: Menos é mais
+#### Modelo 2: Menos é mais
 
 Com base no sumário do modelo naïve, pode-se ver que os campos `Plural` e `BirthWeightOz` foram os únicos significativos.
 
@@ -303,7 +305,25 @@ e.	<span class="comando">Utilize o(s) modelo(s) proposto(s) para fazer pelo meno
 
 ```
 
-# Suspeitas
+# Conclusões e comentários
+
+## Comentários
+
+Em retrospecto, penso que teria perdido menos tempo se tivesse feito uma simples análise do R² ajustado de todas as variáveis numéricas (já que são poucas). Minha primeira escolha foi justamente a que tem menor potencial de explicação, com os dados disponíveis.
+
+Os dados da tabela abaixo foram obtidos da execução do script [varios_modelos.R](varios_modelos.R), ideia que só tive perto do final do prazo para entregar o exercício.
+
+| Coluna | R² ajustado        |
+|--------|--------------------|
+| MomAge |  0.239690016396153 |
+| Weeks  |  0.588115108607321 |
+| Gained |  0.0818566109518561 |
+| BirthWeightOz |  0.568165398604105 |
+
+Table: R² ajustado de modelos naïve para variáveis quantitativas
+
+
+## Suspeitas
 
 Até agora, parece não haver evidências suficientes para compor um modelo linear do peso ganho em função de algumas das outras variáveis. O máximo possível de explicação é de 8% com todos os campos, e vários deles geram coeficientes sem significância estatística ($p>5\%$).
 
