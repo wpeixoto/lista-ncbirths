@@ -6,6 +6,7 @@ output:
   html_document:
     theme: cosmo  # TODO Achar um tema com melhor contraste nos resultados dos blocos
     highlight: zenburn  # espresso  # pygments
+#    css: Rmd_001.css
     toc: True
     number_sections: true
 ---
@@ -37,6 +38,80 @@ summary(nc_births)
 ```
 
 Uma inspeção visual já permite identificar NAs nos campos `Weeks`, `Gained` e `Smoke`, mas os campos que a descrição diz serem categóricos foram tratados como numéricos, e seus sumários não fazem sentido.
+
+
+### Possíveis variáveis dependentes
+
+Não foi especificado um problema para ser estudado. Vejamos como cada campo poderia ser interpretado se fosse a variável dependente. Há dois grupos: Características da mãe e as da gestação e bebê:
+
+#### Maternas
+
+- `MomAge`: Embora se apresente como numérica discreta, pode ser considerada contínua.
+- `Marital`: Categórica com apenas dois valores (Casada ou não)
+- Dados "raciais": `MomRace`, `RaceMom` e `HispMom`, todos categóricos
+- `Smoke`, categórico
+- `Gained`, apesar de ser o peso ganho pela mãe, foi considerado parte da gestação e comentado na seção seguinte
+
+#### Gestação e bebê
+
+- `Plural`: Categórica, pode ser uma logística por Single/Not single
+- `Sex`: Categórica, também pode ser uma logística por Male/Female
+- `Gained`: Contínua
+  - Se for possível prever algum valor, ele pode ser usado para preencher os 40 NAs encontrados.
+- Tempo de gestação:
+    - `Weeks`: Numérica discreta
+    - `Premie`: Categórica, depende de `Weeks`
+- Peso do bebê:
+    - `BirthWeightOz` ou `BirthWeightGm`, numéricas. Em Oz, parece ser apenas inteiro enquanto em g, é float.
+        - Se a conversão estiver correta, basta eliminar uma das colunas. <s>Mas estou curioso para ver se o modelo linear vai mostrar alguma diferença inexistente.</s>
+        - A documentação não diz como interpretar esses valores no caso de gravidez múltipla (`Plural`!= "Single")
+  - `Low`: Categórica. Adequada para logística. Depende integralmente do peso do bebê.
+
+### Prováveis Correlações entre as colunas
+
+- A mais gritante é a do peso dos bebês, a mesma informação em duas unidades.
+- `MomRace`, `HispMom` e `MomRace` (ô povo racista!): Há grande sobreposição entre os conceitos.
+    - TODO: <s>Verificar a sobreposição</s>; tentar converter em uma única coluna
+- `Weeks` e `Premie`: A segunda depende completamente da primeira
+- `BirthWeight{Oz,Gm}` e `Low`: Mesmo caso: A segunda também depende completamente das primeiras
+    - TODO: <s>Verificar se todos os `Low` realmente têm peso menor que 2500g</s>
+
+### Escolhas disponíveis
+
+|          | Numéricas            | Categóricas                  |
+|----------|----------------------|------------------------------|
+| Mãe      |  `Gained`¹, `MomAge` | `Smoke`, `Marital`, "raças"³ |
+| Gestação | `Gained`¹, `Weeks`   | `Plural`, `Premie`           |
+| Bebê     | Peso²                | `Sex`, `Low`                 |
+
+<div style='font-size:x-small'>
+1 - Quem ganha o peso é a mãe, mas isso decorre da gravidez  
+2 - O peso é dado em duas unidades, basta ignorar uma delas  
+3 - Geneticamente, o conceito de raça humana [não existe](https://www.eurekalert.org/pub_releases/1998-10/WUiS-GSRD-071098.php), mas [culturalmente](https://en.wikipedia.org/wiki/Race_%28human_categorization%29) a distinção pode ser importante, como no caso do local da origem desses dados.
+</div>
+
+## Peso do bebê: a conversão está correta?
+O peso do bebÊ é dado tanto em onças (Oz) quanto em gramas (g). Se não houver erros de conversão de unidade de massa, basta eliminar uma delas, pois têm rigorosamente a mesma informação.
+
+Uma eventual divergência, no entanto, pode indicar erros graves na coleta e/ou registro dos dados, e uma escolha mais complexa precisa ser feita.
+```{r verifica conversões de unidade de massa do bebê}
+# bloco de código - item b
+
+summary(nc_births$BirthWeightGm/nc_births$BirthWeightOz)
+if (mean(nc_births$BirthWeightGm/nc_births$BirthWeightOz)/max(nc_births$BirthWeightGm/nc_births$BirthWeightOz) != 1 ) {
+  error("Há um erro de conversão entre Oz e g")
+} else {
+  if (max(nc_births$BirthWeightGm/nc_births$BirthWeightOz) == 28.35)  {
+    print("Todas as conversões de unidade estão corretas")
+  } else {
+    print("Embora consistentes, as conversões não estão corretas")
+  }
+}
+
+
+```
+
+Conclui-se que as colunas `BirthWeightGm` e `BirthWeightOz` contêm informação idêntica, e uma delas pode ser ignorada com segurança.
 
 ### Correlações simples
 ```{r Boxplots, echo=FALSE}
@@ -153,71 +228,6 @@ nc_births$somaNulos <- NULL
 
 ## b.	Faça análises marginais e multivariadas.
 
-### Possíveis variáveis dependentes
-
-Não foi especificado um problema para ser estudado. Vejamos como cada campo poderia ser interpretado se fosse a variável dependente. Há dois grupos: Características da mãe e as da gestação e bebê:
-
-#### Maternas
-
-- `MomAge`: Embora se apresente como numérica discreta, pode ser considerada contínua.
-- `Marital`: Categórica com apenas dois valores (Casada ou não)
-- Dados "raciais": `MomRace`, `RaceMom` e `HispMom`, todos categóricos
-- `Smoke`, categórico
-- `Gained`, apesar de ser o peso ganho pela mãe, foi considerado parte da gestação e comentado na seção seguinte
-
-#### Gestação e bebê
-
-- `Plural`: Categórica, pode ser uma logística por Single/Not single
-- `Sex`: Categórica, também pode ser uma logística por Male/Female
-- `Gained`: Contínua
-  - Se for possível prever algum valor, ele pode ser usado para preencher os 40 NAs encontrados.
-- Tempo de gestação:
-    - `Weeks`: Numérica discreta
-    - `Premie`: Categórica, depende de `Weeks`
-- Peso do bebê:
-    - `BirthWeightOz` ou `BirthWeightGm`, numéricas. Em Oz, parece ser apenas inteiro enquanto em g, é float.
-        - Se a conversão estiver correta, basta eliminar uma das colunas. <s>Mas estou curioso para ver se o modelo linear vai mostrar alguma diferença inexistente.</s>
-        - A documentação não diz como interpretar esses valores no caso de gravidez múltipla (`Plural`!= "Single")
-  - `Low`: Categórica. Adequada para logística. Depende integralmente do peso do bebê.
-
-### Prováveis Correlações entre as colunas
-
-- A mais gritante é a do peso dos bebês, a mesma informação em duas unidades.
-- `MomRace`, `HispMom` e `MomRace` (ô povo racista!): Há grande sobreposição entre os conceitos.
-    - TODO: <s>Verificar a sobreposição</s>; tentar converter em uma única coluna
-- `Weeks` e `Premie`: A segunda depende completamente da primeira
-- `BirthWeight{Oz,Gm}` e `Low`: Mesmo caso: A segunda também depende completamente das primeiras
-    - TODO: <s>Verificar se todos os `Low` realmente têm peso menor que 2500g</s>
-
-### Escolhas disponíveis
-
-|          | Numéricas            | Categóricas                  |
-|----------|----------------------|------------------------------|
-| Mãe      |  `Gained`¹, `MomAge` | `Smoke`, `Marital`, "raças"³ |
-| Gestação | `Gained`¹, `Weeks`   | `Plural`, `Premie`           |
-| Bebê     | Peso²                | `Sex`, `Low`                 |
-
-<div style='font-size:x-small'>
-1 - Quem ganha o peso é a mãe, mas isso decorre da gravidez  
-2 - O peso é dado em duas unidades, basta ignorar uma delas  
-3 - Geneticamente, o conceito de raça humana [não existe](https://www.eurekalert.org/pub_releases/1998-10/WUiS-GSRD-071098.php), mas [culturalmente](https://en.wikipedia.org/wiki/Race_%28human_categorization%29) a distinção pode ser importante, como no caso do local da origem desses dados.
-</div>
-```{r}
-# bloco de código - item b
-
-summary(nc_births$BirthWeightGm/nc_births$BirthWeightOz)
-if (mean(nc_births$BirthWeightGm/nc_births$BirthWeightOz)/max(nc_births$BirthWeightGm/nc_births$BirthWeightOz) != 1 ) {
-  error("Há um erro de conversão entre Oz e g")
-} else {
-  if (max(nc_births$BirthWeightGm/nc_births$BirthWeightOz) == 28.35)  {
-    print("Todas as conversões de unidade estão corretas")
-  } else {
-    print("Embora consistentes, as conversões não estão corretas")
-  }
-}
-
-
-```
 
 ### Peso ganho em função das outras variáveis
 
