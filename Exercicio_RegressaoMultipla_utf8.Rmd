@@ -15,17 +15,21 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-#  Regressão Múltipla
+# Introdução
 
-Carregue a base de dados **NCBirths**, disponível em <https://vincentarelbundock.github.io/Rdatasets/datasets.html>. 
+O exercício consiste em construir um ou mais modelos lineares em uma base pública de dados sobre nascimentos na Carolina do Norte (EUA) no ano de 2001, que consiste em uma amostra de 1450 registros de nascimento selecionados pelo estatístico John Holcomb.
+
+<div class="comando">Carregue a base de dados **NCBirths**, disponível em <https://vincentarelbundock.github.io/Rdatasets/datasets.html>. 
 
 Desenvolva os itens a seguir aplicando técnicas gráficas e formais, e apresente resultados, explicações e considerações que julgar necessários.
 
 Utilize o presente documento Markdown (referências em <http://rmarkdown.rstudio.com>, <https://bookdown.org/yihui/rmarkdown/>) para a inserção do código e geração de resultados.
+</div>
 
+#  Regressão Múltipla
 ## Estrutura e variáveis
 
-a. Conheça a estrutura dos dados e explore as variáveis quantitativas e qualitativas. 
+<p class="comando">a. Conheça a estrutura dos dados e explore as variáveis quantitativas e qualitativas. </p>
 
 ```{r Data Load}
 # bloco de código - item a
@@ -77,12 +81,15 @@ Não foi especificado um problema para ser estudado. Vejamos como cada campo pod
     - TODO: <s>Verificar se todos os `Low` realmente têm peso menor que 2500g</s>
 
 ### Escolhas disponíveis
+Dentre todas as colunas, as seguintes podem ser escolhidas como variáveis dependentes:
 
-|          | Numéricas            | Categóricas                  |
+|          | Quantitativas        | Categóricas                  |
 |----------|----------------------|------------------------------|
 | Mãe      |  `Gained`¹, `MomAge` | `Smoke`, `Marital`, "raças"³ |
 | Gestação | `Gained`¹, `Weeks`   | `Plural`, `Premie`           |
 | Bebê     | Peso²                | `Sex`, `Low`                 |
+
+Table: Colunas candidatas a variável dependente, segundo 
 
 <div style='font-size:x-small'>
 1 - Quem ganha o peso é a mãe, mas isso decorre da gravidez  
@@ -173,7 +180,7 @@ Parece preocupante a grande quantidade de ausências em `Gained`, que correspond
 
 ### Fatores
 
-Segundo a [documentação](nc_births.html) do DataSet, várias dessas colunas podem ser convertidas em fatores:
+Segundo a [documentação](NCbirths.html) do DataSet, várias dessas colunas podem ser convertidas em fatores:
 
 ```{r Fatorizar o data frame}
 # Fatorizar o que der
@@ -226,7 +233,7 @@ nc_births$somaNulos <- NULL
 # boxplot(nc_births$Gained ~ nc_births$MomRace + nc_births$RaceMom, main='Peso ganho por "Raça"') # Pouco útil sem fatores
 ```
 
-## b.	Faça análises marginais e multivariadas.
+## b.	<span class="comando">Faça análises marginais e multivariadas. </span>
 
 
 ### Peso ganho em função das outras variáveis
@@ -294,7 +301,7 @@ s
 ```
 
 
-## c.	Verifique as premissas do modelo linear.
+## c.	<span class="comando">Verifique as premissas do modelo linear.</span>
 
 ```{r fit_gained_ajustado_vs_residuo}
 # bloco de código - item c
@@ -307,7 +314,7 @@ plot(predict(fit_gained2), resid(fit_gained2),   # data=nc_births,
 
 ```
 
-## d.	Proposta de modelo
+## d.	<span class="comando">Proposta de modelo</span>
 
 Com base nas análises, proponha um ou mais modelos lineares multivariados. Explique a sua escolha.
 
@@ -318,7 +325,7 @@ Com base nas análises, proponha um ou mais modelos lineares multivariados. Expl
 
 ```
 
-e.	Utilize o(s) modelo(s) proposto(s) para fazer pelo menos uma predição.
+e.	<span class="comando">Utilize o(s) modelo(s) proposto(s) para fazer pelo menos uma predição.</span>
 
 ```{r}
 # bloco de código - item e
