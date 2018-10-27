@@ -6,13 +6,15 @@ output:
   html_document:
     theme: cosmo  # TODO Achar um tema com melhor contraste nos resultados dos blocos
     highlight: zenburn  # espresso  # pygments
-#    css: Rmd_001.css
+    css: Rmd_001.css
     toc: True
     number_sections: true
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+cssTODO = 'style="tex-decoration:underline; background:green'
 ```
 
 # Introdução
@@ -165,6 +167,8 @@ Por isso, esse campo pode seguramente ser ignorado nas regressões.
 ### Valores ausentes
 Por inspeção visual, foi possível detectar valores ausentes nas colunas `Weeks`(1), `Smoke`(5) e `Gained`(40). Faremos avaliação de cada caso assim que der.
 
+<p `r cssTODO`>TODO: Avaliar casos ausentes </p>
+
 ```{r Check NA}
 col.sums = colSums(is.na(nc_births))
 col.sums[col.sums>0]  # Verificação programática de quais colunas têm NAs
@@ -202,16 +206,19 @@ nc_births$somaNulos <- NULL
 # boxplot(nc_births$Gained ~ nc_births$MomRace + nc_births$RaceMom, main='Peso ganho por "Raça"') # Pouco útil sem fatores
 ```
 
-## Análises marginais e multivariadas {.tabset .tabset-fade } <!--.tabset-pills} -->
+## Análises marginais e multivariadas {.tabset .tabset-fade } 
+<!--.tabset-pills} -->
 
 b.	<span class="comando">Faça análises marginais e multivariadas. </span>
 
 
-### Peso ganho em função das outras variáveis
+### Peso da mãe
 
-#### Modelo 1: Naïve
+Tentativa de explicar o peso ganho em função das outras variáveis.
+
+#### Exploração de dados
 ```{r Gained expl}
- boxplot(nc_births$Gained)
+boxplot(nc_births$Gained)
 df1 = transform(nc_births, group=cut(MomAge, breaks = c(-Inf, 18, 24, 30, 35, 40, +Inf), labels = c('<19', '19-24', '25-29', '30-35', '36-40', '>40')))
 boxplot(df1$Gained ~ df1$group, main="Ganho de peso por faixa etária", sub="Há pouca variação aparente")
 
@@ -224,6 +231,7 @@ gained_mean = mean(nc_births$Gained, na.rm = T)
 
 A distribuição das frequências de pesos ganhos parece ser normal, com média `r gained_mean` e desvio padrão `r sd(nc_births$Gained, na.rm=T)` (apenas os valores presentes. 40 estão faltando), o resultado de um teste Shapiro-Wil é `r sw_gained$statistic` com $p < 5\%$ (`r sw_gained$p.value`).
 
+#### Modelo 1: Naïve
 ```{r Gained 1}
 fit_gained1 = lm(Gained ~ ., data=ncb_births_noGainedNA)
 summary(fit_gained1)
@@ -264,9 +272,17 @@ anova(fit_gained1, fit_gained2)
 Como resultado, todos os coeficientes são altamente significativos, e a análise de variância informa uma queda de mais de 8000 pontos na soma dos quadrados dos resíduos. Entretanto, o poder de explicação caiu para 6,34%. 
 
 
-### Modelo 3: Peso do bebê
+### Peso do bebê
 
-s
+TODO: Modelo 3:
+```{r}
+
+```
+
+
+### Tempo de gestação
+
+TODO: Modelos
 ```{r}
 
 ```
@@ -311,6 +327,8 @@ e.	<span class="comando">Utilize o(s) modelo(s) proposto(s) para fazer pelo meno
 
 Em retrospecto, penso que teria perdido menos tempo se tivesse feito uma simples análise do R² ajustado de todas as variáveis numéricas (já que são poucas). Minha primeira escolha foi justamente a que tem menor potencial de explicação, com os dados disponíveis.
 
+Esses valores sugerem um limite superior para o poder de explicação de um modelo linear que explique as obervações de cara uma dessas variáveis.
+
 Os dados da tabela abaixo foram obtidos da execução do script [varios_modelos.R](varios_modelos.R), ideia que só tive perto do final do prazo para entregar o exercício.
 
 | Coluna | R² ajustado        |
@@ -321,7 +339,6 @@ Os dados da tabela abaixo foram obtidos da execução do script [varios_modelos.
 | BirthWeightOz |  0.568165398604105 |
 
 Table: R² ajustado de modelos naïve para variáveis quantitativas
-
 
 ## Suspeitas
 
