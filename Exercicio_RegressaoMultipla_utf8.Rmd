@@ -6,7 +6,8 @@ output:
   html_document:
     theme: cosmo  # TODO Achar um tema com melhor contraste nos resultados dos blocos
     highlight: zenburn  # espresso  # pygments
-    css: Rmd_001.css
+#    css: Rmd_001.css
+    css: Extra.css
     toc: True
     number_sections: true
 ---
@@ -103,7 +104,7 @@ As variáveis quantitativas podem ser objeto de estudo de modelos lineares, enqu
 3 - Geneticamente, o conceito de raça humana [não existe](https://www.eurekalert.org/pub_releases/1998-10/WUiS-GSRD-071098.php), mas [culturalmente](https://en.wikipedia.org/wiki/Race_%28human_categorization%29) a distinção pode ser importante, como no caso do local da origem desses dados.
 </div>
 
-## Peso do bebê: a conversão está correta?
+### Peso do bebê: a conversão está correta?
 O peso do bebÊ é dado tanto em onças (Oz) quanto em gramas (g). Se não houver erros de conversão de unidade de massa, basta eliminar uma delas, pois têm rigorosamente a mesma informação.
 
 Uma eventual divergência, no entanto, pode indicar erros graves na coleta e/ou registro dos dados, e uma escolha mais complexa precisa ser feita.
@@ -305,7 +306,9 @@ plot(predict(fit_gained2), resid(fit_gained2),   # data=nc_births,
 
 ```
 
-## d.	<span class="comando">Proposta de modelo</span>
+## Propostas
+
+d.	<span class="comando">Proposta de modelo</span>
 
 Com base nas análises, proponha um ou mais modelos lineares multivariados. Explique a sua escolha.
 
@@ -316,7 +319,9 @@ Com base nas análises, proponha um ou mais modelos lineares multivariados. Expl
 
 ```
 
-e.	<span class="comando">Utilize o(s) modelo(s) proposto(s) para fazer pelo menos uma predição.</span>
+### Predições
+
+e. <span class="comando">Utilize o(s) modelo(s) proposto(s) para fazer pelo menos uma predição.</span>
 
 ```{r}
 # bloco de código - item e
