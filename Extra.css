@@ -1,0 +1,15 @@
+pre, code {
+
+    color: #756f6f;
+    background-color: #303030;
+
+}
+
+
+p > TODO {
+    text-decoration: underline; !important
+}
+
+comando {
+    text-shadow: 2px 2px 2px #545454;
+}

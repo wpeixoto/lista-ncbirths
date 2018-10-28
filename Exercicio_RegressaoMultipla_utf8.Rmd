@@ -9,7 +9,7 @@ output:
 #    css: Rmd_001.css
     css: Extra.css
     toc: True
-    number_sections: true
+    # number_sections: true
 ---
 
 ```{r setup, include=FALSE}
@@ -106,15 +106,15 @@ Num contexto humano, não faz sentido prever grupo étnico, estado civil ou idad
 3 - Geneticamente, o conceito de raça humana [não existe](https://www.eurekalert.org/pub_releases/1998-10/WUiS-GSRD-071098.php), mas [culturalmente](https://en.wikipedia.org/wiki/Race_%28human_categorization%29) a distinção pode ser importante, como no caso do local da origem desses dados.
 </div>
 
-#### Exploração de dados 
+#### Exploração de dados {.tabset .tabset-fade } 
 
-As três varoáveis quantitativas que podem (talvez) serem estudadas com regressão linear múltipla são:
+As três variáveis quantitativas que podem (talvez) serem estudadas com regressão linear múltipla são:
 
 - Variação de peso da mãe durante a gestação (`Gained`)
 - Peso do bebê ao nascer (`BirthWeightOz`)
 - Duração da gravidez (`Weeks`)
 
-#### Peso da mãe
+##### Peso da mãe
 ```{r Gained expl, echo=FALSE}
 par(mfrow = c(2, 2))
 boxplot(nc_births$Gained, main="Distribuição geral")
@@ -127,6 +127,20 @@ boxplot(grp_por_faixa_etaria$Weeks ~ grp_por_faixa_etaria$group, main="Duração
 
 ```
 
+
+###### Correlações simples
+```{r Boxplots, echo=FALSE}
+# boxplot(nc_births$Gained ~ nc_births$MomAge, main="Peso ganho por faixa etária")
+boxplot(nc_births$Gained ~ nc_births$Weeks, main="Peso ganho por duração da gravidez")
+
+grp_por_duracao = transform(nc_births, group=cut(Weeks, breaks = c(-Inf, 18, 24, 30, 35, 40, +Inf), labels = c('<19', '19-24', '25-29', '30-35', '36-40', '>40')))
+
+# boxplot(nc_births$Gained ~ nc_births$MomRace + nc_births$RaceMom, main='Peso ganho por "Raça"') # Pouco útil sem fatores
+
+```
+
+
+
 ```{r Gained histogram}
 hist(nc_births$Gained, density = 10, breaks = 30)
 # density(nc_births$Gained)
@@ -138,9 +152,36 @@ gained_mean = mean(nc_births$Gained, na.rm = T)
 
 A distribuição das frequências de pesos ganhos parece ser normal, com média `r gained_mean` e desvio padrão `r sd(nc_births$Gained, na.rm=T)` (apenas os valores presentes. 40 estão faltando), o resultado de um teste Shapiro-Wil é `r sw_gained$statistic` com $p < 5\%$ (`r sw_gained$p.value`).
 
-#### Peso do bebê
+##### Peso do bebê
+TODO: adasad
+```{r}
+peso_normal = nc_births[nc_births$Low==0,]
+baixo_peso = nc_births[nc_births$Low==1,]
 
-#### Duração da gravidez
+par(mfrow = c(1, 2))
+boxplot(peso_normal$BirthWeightOz,
+        main="Bebês com peso acima de 2500g")
+
+boxplot(baixo_peso$BirthWeightOz,
+        main="Bebês com peso baixo")
+par(mfrow = c(1, 3))
+hist(nc_births$BirthWeightOz, breaks=25, 
+#     xlab="Semanas de gestação",
+     main="Peso do bebê (geral)")
+hist(peso_normal$BirthWeightOz, breaks=25,
+     main="Peso normal")
+hist(baixo_peso$BirthWeightOz, breaks=25,
+     main="Baixo Peso")
+```
+
+##### Duração da gravidez
+
+```{r}
+hist(nc_births$Weeks, breaks=30, 
+     xlab="Semanas de gestação",
+     main="Histograma da duração da gravidez")
+
+```
 
 ### Peso do bebê: a conversão está correta?
 O peso do bebÊ é dado tanto em onças (Oz) quanto em gramas (g). Se não houver erros de conversão de unidade de massa, basta eliminar uma delas, pois têm rigorosamente a mesma informação.
@@ -164,15 +205,6 @@ if (mean(nc_births$BirthWeightGm/nc_births$BirthWeightOz)/max(nc_births$BirthWei
 ```
 
 Conclui-se que as colunas `BirthWeightGm` e `BirthWeightOz` contêm informação idêntica, e uma delas pode ser ignorada com segurança.
-
-### Correlações simples
-```{r Boxplots, echo=FALSE}
-boxplot(nc_births$Gained ~ nc_births$MomAge, main="Peso ganho por faixa etária")
-boxplot(nc_births$Gained ~ nc_births$Weeks, main="Peso ganho por duração da gravidez")
-
-# boxplot(nc_births$Gained ~ nc_births$MomRace + nc_births$RaceMom, main='Peso ganho por "Raça"') # Pouco útil sem fatores
-
-```
 
 ### Erros aparentes
 
