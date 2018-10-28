@@ -98,11 +98,49 @@ As "raças" estão espalhadas por três variáveis: `MomRace`, `RaceMom` e `Hisp
 
 As variáveis quantitativas podem ser objeto de estudo de modelos lineares, enquanto as categóricas precisam ser explicadas por outros modelos. Em particular, as binárias (`Sex`, `Smoke`, `Marital`, `Premie` e `Low`) poderiam ser estudadas com a regressão logística.
 
+Num contexto humano, não faz sentido prever grupo étnico, estado civil ou idade da mãe com base nos dados disponíveis, então as variáveis `MomAge`, `Marital` e as "raças" não serão objeto de estudo dessa natureza.
+
 <div style='font-size:x-small'>
 1 - Quem ganha o peso é a mãe, mas isso decorre da gravidez  
 2 - O peso é dado em duas unidades, basta ignorar uma delas  
 3 - Geneticamente, o conceito de raça humana [não existe](https://www.eurekalert.org/pub_releases/1998-10/WUiS-GSRD-071098.php), mas [culturalmente](https://en.wikipedia.org/wiki/Race_%28human_categorization%29) a distinção pode ser importante, como no caso do local da origem desses dados.
 </div>
+
+#### Exploração de dados 
+
+As três varoáveis quantitativas que podem (talvez) serem estudadas com regressão linear múltipla são:
+
+- Variação de peso da mãe durante a gestação (`Gained`)
+- Peso do bebê ao nascer (`BirthWeightOz`)
+- Duração da gravidez (`Weeks`)
+
+#### Peso da mãe
+```{r Gained expl, echo=FALSE}
+par(mfrow = c(2, 2))
+boxplot(nc_births$Gained, main="Distribuição geral")
+grp_por_faixa_etaria = transform(nc_births, group=cut(MomAge, breaks = c(-Inf, 18, 24, 30, 35, 40, +Inf), labels = c('<19', '19-24', '25-29', '30-35', '36-40', '>40')))
+boxplot(grp_por_faixa_etaria$Gained ~ grp_por_faixa_etaria$group, main="Ganho de peso por faixa etária", sub="Há pouca variação aparente")
+
+boxplot(grp_por_faixa_etaria$BirthWeightOz ~ grp_por_faixa_etaria$group, main="Peso do bebê por faixa etária da mãe", sub="Não faz sentido")
+
+boxplot(grp_por_faixa_etaria$Weeks ~ grp_por_faixa_etaria$group, main="Duração da gravidez por faixa etária", sub="Há pouca variação aparente")
+
+```
+
+```{r Gained histogram}
+hist(nc_births$Gained, density = 10, breaks = 30)
+# density(nc_births$Gained)
+sw_gained = shapiro.test(nc_births$Gained)
+
+gained_mean = mean(nc_births$Gained, na.rm = T)
+
+```
+
+A distribuição das frequências de pesos ganhos parece ser normal, com média `r gained_mean` e desvio padrão `r sd(nc_births$Gained, na.rm=T)` (apenas os valores presentes. 40 estão faltando), o resultado de um teste Shapiro-Wil é `r sw_gained$statistic` com $p < 5\%$ (`r sw_gained$p.value`).
+
+#### Peso do bebê
+
+#### Duração da gravidez
 
 ### Peso do bebê: a conversão está correta?
 O peso do bebÊ é dado tanto em onças (Oz) quanto em gramas (g). Se não houver erros de conversão de unidade de massa, basta eliminar uma delas, pois têm rigorosamente a mesma informação.
@@ -221,20 +259,6 @@ b.	<span class="comando">Faça análises marginais e multivariadas. </span>
 
 Tentativa de explicar o peso ganho em função das outras variáveis.
 
-#### Exploração de dados
-```{r Gained expl}
-boxplot(nc_births$Gained)
-df1 = transform(nc_births, group=cut(MomAge, breaks = c(-Inf, 18, 24, 30, 35, 40, +Inf), labels = c('<19', '19-24', '25-29', '30-35', '36-40', '>40')))
-boxplot(df1$Gained ~ df1$group, main="Ganho de peso por faixa etária", sub="Há pouca variação aparente")
-
-hist(nc_births$Gained, density = 10, breaks = 30)
-sw_gained = shapiro.test(nc_births$Gained)
-
-gained_mean = mean(nc_births$Gained, na.rm = T)
-
-```
-
-A distribuição das frequências de pesos ganhos parece ser normal, com média `r gained_mean` e desvio padrão `r sd(nc_births$Gained, na.rm=T)` (apenas os valores presentes. 40 estão faltando), o resultado de um teste Shapiro-Wil é `r sw_gained$statistic` com $p < 5\%$ (`r sw_gained$p.value`).
 
 #### Modelo 1: Naïve
 ```{r Gained 1}
