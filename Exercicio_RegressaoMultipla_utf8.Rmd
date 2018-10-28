@@ -83,15 +83,19 @@ Não foi especificado um problema para ser estudado. Vejamos como cada campo pod
     - TODO: <s>Verificar se todos os `Low` realmente têm peso menor que 2500g</s>
 
 ### Escolhas disponíveis
-Dentre todas as colunas, as seguintes podem ser escolhidas como variáveis dependentes:
+Todas as colunas poderiam ser sujeitas a tentativas de explicação, mas suas características são diferentes:
 
 |          | Quantitativas        | Categóricas                  |
 |----------|----------------------|------------------------------|
-| Mãe      |  `Gained`¹, `MomAge` | `Smoke`, `Marital`, "raças"³ |
+| Mãe      | `Gained`¹, `MomAge`  | `Smoke`, `Marital`, "raças"³ |
 | Gestação | `Gained`¹, `Weeks`   | `Plural`, `Premie`           |
 | Bebê     | Peso²                | `Sex`, `Low`                 |
 
-Table: Colunas candidatas a variável dependente, segundo 
+Table: Colunas candidatas a variável dependente, e suas características
+
+As "raças" estão espalhadas por três variáveis: `MomRace`, `RaceMom` e `HispMom`
+
+As variáveis quantitativas podem ser objeto de estudo de modelos lineares, enquanto as categóricas precisam ser explicadas por outros modelos. Em particular, as binárias (`Sex`, `Smoke`, `Marital`, `Premie` e `Low`) poderiam ser estudadas com a regressão logística.
 
 <div style='font-size:x-small'>
 1 - Quem ganha o peso é a mãe, mas isso decorre da gravidez  
