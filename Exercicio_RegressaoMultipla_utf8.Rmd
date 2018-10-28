@@ -182,10 +182,16 @@ hist(baixo_peso$BirthWeightOz, breaks=25,
 par(mfrow = c(2, 2))
 hist(nc_births$Weeks, breaks=30, 
      xlab="Semanas de gestação",
-     main="Histograma da duração da gravidez")
+     main="Histograma da duração da gravidez",
+     sub = "vermelho=premturos, azul=média")
+abline(v=36, col="red")  # Linha dos prematuros
+abline(v=mean(nc_births$Weeks, na.rm = T), col="blue")
+text(10, 5, "Teste")
 
 plot(density(nc_births$Weeks, na.rm = T),
      main="DPF das durações de gestação")
+abline(v=36, col="red")
+abline(v=mean(nc_births$Weeks, na.rm = T), col="blue")
 
 qqnorm(nc_births$Weeks)
 
@@ -197,12 +203,21 @@ media_weeks = format(round(mean(nc_births$Weeks, na.rm = T), 3))
 dp_weeks = format(round(sd(nc_births$Weeks, na.rm = T), 3))
 ```
 
-A distribuiçã das frequências de duração da gravidez é enviesada em direção à duração esperada da gestação a termo: 40 semanas após a última menstruação, 38 após a fertilização, e não pode ser considerada uma distribuição Normal (Teste Shapiro-Wilk: W=`r sww_W`, p=`r sw_weeks$p.value`).
+A distribuiçã das frequências de duração da gravidez é enviesada em direção à duração esperada da gestação a termo: 40 semanas após a última menstruação, 38 após a fertilização, e não pode ser considerada uma distribuição Normal (Teste Shapiro-Wilk: W=`r sww_W`, $p=`r sw_weeks$p.value`$).
 
 A média é `r media_weeks` e o desvio padrão é de `r dp_weeks`.
 
+```{r boxplots Weeks, echo=FALSE}
+prematuros = nc_births[nc_births$Premie == 1,]$Weeks
+nascidos_a_termo = nc_births[nc_births$Premie == 0,]$Weeks
 
-### Peso do bebê: a conversão está correta?
+```
+
+
+----
+### Verificação das observações
+
+#### Peso do bebê: a conversão está correta?
 O peso do bebÊ é dado tanto em onças (Oz) quanto em gramas (g). Se não houver erros de conversão de unidade de massa, basta eliminar uma delas, pois têm rigorosamente a mesma informação.
 
 Uma eventual divergência, no entanto, pode indicar erros graves na coleta e/ou registro dos dados, e uma escolha mais complexa precisa ser feita.
@@ -225,7 +240,7 @@ if (mean(nc_births$BirthWeightGm/nc_births$BirthWeightOz)/max(nc_births$BirthWei
 
 Conclui-se que as colunas `BirthWeightGm` e `BirthWeightOz` contêm informação idêntica, e uma delas pode ser ignorada com segurança.
 
-### Erros aparentes
+#### Erros aparentes
 
 Parece haver uma confusão no registro de raças. Há três campos para isso, e encontrei pelo menos uma inconsistência no aparente registro de mães hispânicas como japonesas:
 ```{r Verifica Raças}
@@ -258,7 +273,7 @@ Foi confirmado que, realmente, os registros marcados como `Low==Y` todos têm pe
 Por isso, esse campo pode seguramente ser ignorado nas regressões.
 
 
-### Valores ausentes
+#### Valores ausentes
 Por inspeção visual, foi possível detectar valores ausentes nas colunas `Weeks`(1), `Smoke`(5) e `Gained`(40). Faremos avaliação de cada caso assim que der.
 
 <p `r cssTODO`>TODO: Avaliar casos ausentes </p>
@@ -276,7 +291,7 @@ NCBnoNAs = nc_births[complete.cases(nc_births),]
 Parece preocupante a grande quantidade de ausências em `Gained`, que corresponde a `r col.sums["Gained"]/nrow(nc_births)*100`% das linhas. A estratégia ideal depende da alavancagem desses registros.
 
 
-### Fatores
+#### Fatores
 
 Segundo a [documentação](NCbirths.html) do DataSet, várias dessas colunas podem ser convertidas em fatores:
 
@@ -320,7 +335,7 @@ summary(fit_gained1)
 Curiosamente, vários campos que eu marquei para exclusão aparecem como NA no sumário, mas não todos: `Low` foi considerado, mas ficou terrivelmente insignificante.
 
 Esse modelo explica apenas 8% do resultado. Será que existem modelos melhores?
-```{r Gained 2}
+```{r Gained pairs graph}
 
 # pairs(Gained ~ ., data=nc_births)
 pairs(Gained ~ Plural + MomAge + Weeks + BirthWeightOz, 
@@ -368,7 +383,23 @@ TODO: Modelos
 ```
 
 
-## c.	<span class="comando">Verifique as premissas do modelo linear.</span>
+## Verificação de premissas do modelo linear
+
+<span id="comm_c" class="comando">c.	Verifique as premissas do modelo linear.</span>
+
+- Resíduos
+  - Independência
+  - Normalidade
+  - Homocedasticidade
+  - Linearidade
+
+```{r verificar propriedades dos residuos}
+source("verifica_residuos.R")
+
+
+```
+
+
 
 ```{r fit_gained_ajustado_vs_residuo}
 # bloco de código - item c
