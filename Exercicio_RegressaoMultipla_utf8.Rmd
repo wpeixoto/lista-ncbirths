@@ -176,12 +176,31 @@ hist(baixo_peso$BirthWeightOz, breaks=25,
 
 ##### Duração da gravidez
 
-```{r}
+###### Distribuição de frequências
+
+```{r distribuição freq Weeks, echo=FALSE}
+par(mfrow = c(2, 2))
 hist(nc_births$Weeks, breaks=30, 
      xlab="Semanas de gestação",
      main="Histograma da duração da gravidez")
 
+plot(density(nc_births$Weeks, na.rm = T),
+     main="DPF das durações de gestação")
+
+qqnorm(nc_births$Weeks)
+
+
+sw_weeks = shapiro.test(nc_births$Weeks)
+sww_W = format(round(sw_weeks$statistic[[1]], 4), nsmall = 4)
+sww_p = format(round(sw_weeks$p.value[[1]], 4), nsmall = 4)
+media_weeks = format(round(mean(nc_births$Weeks, na.rm = T), 3))
+dp_weeks = format(round(sd(nc_births$Weeks, na.rm = T), 3))
 ```
+
+A distribuiçã das frequências de duração da gravidez é enviesada em direção à duração esperada da gestação a termo: 40 semanas após a última menstruação, 38 após a fertilização, e não pode ser considerada uma distribuição Normal (Teste Shapiro-Wilk: W=`r sww_W`, p=`r sw_weeks$p.value`).
+
+A média é `r media_weeks` e o desvio padrão é de `r dp_weeks`.
+
 
 ### Peso do bebê: a conversão está correta?
 O peso do bebÊ é dado tanto em onças (Oz) quanto em gramas (g). Se não houver erros de conversão de unidade de massa, basta eliminar uma delas, pois têm rigorosamente a mesma informação.
