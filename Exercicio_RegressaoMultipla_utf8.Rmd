@@ -396,7 +396,16 @@ TODO: Modelos
 ```{r verificar propriedades dos residuos}
 source("verifica_residuos.R")
 
+pro_res_1 = verifica_props_residuos(
+  fit_gained1$residuals,
+  ncb_births_noGainedNA$Gained,
+  fit_gained1$fitted.values
+  )
 
+if (!pro_res_1$is.small) {
+  print("Alguma propriedade do modelo 1 não tem o valor esperado:")
+  print_props_residuos(pro_res_1)
+}
 ```
 
 

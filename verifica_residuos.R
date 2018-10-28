@@ -1,7 +1,7 @@
 # Verificação de propriedades dos resíduos de regressão linear, 
 # ver pág. 110 e seguintes
 
-verifica_residuos = function(resids,  # vetor de resíduos
+verifica_props_residuos = function(resids,  # vetor de resíduos
                              obs,     # vetor de valores observados
                              adjs,    # vetor de valores ajustados
                              valor_pequeno=0.0000000001) 
@@ -23,8 +23,20 @@ verifica_residuos = function(resids,  # vetor de resíduos
   result$diff.values.P4 = diff_values
   result$diff.medias.P5 = diff_medias
   result$soma.ponderada = soma_ponderada
-  results$is.small = (soma + media + diff_medias + diff_values + soma_ponderada < valor_pequeno)
+  soma.tudo = soma + media + diff_medias + diff_values + soma_ponderada
+  result$is.small = (soma.tudo < valor_pequeno)
   
   return(result)
+  
+}
+
+pr.p <- function(title, value) {
+  print(paste(title, value))
+}
+
+print_props_residuos <- function(props_residuos, casas=15)  {
+  pr.p("Soma dos resíduos:", round(props_residuos$soma.resids, casas))
+  pr.p("Média dos resíduos:", round(props_residuos$media.resids, casas))
+  pr.p("Diff. entre soma das obs e a dos ajustados", round(props_residuos$diff.values.P4, casas))
   
 }
