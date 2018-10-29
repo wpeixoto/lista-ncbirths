@@ -1,0 +1,527 @@
+---
+title: "Peso do bebê"
+author: "William Peixoto"
+date: "knit mais recente: `r format(Sys.Date(), format = '%d de %B %Y')`" 
+output: 
+  html_document:
+    theme: cosmo  # TODO Achar um tema com melhor contraste nos resultados dos blocos
+    highlight: zenburn  # espresso  # pygments
+#    css: Rmd_001.css
+    css: Extra.css
+    toc: True
+    # number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+cssTODO = 'style="text-decoration:underline; background:green"'
+```
+
+# Exercício de Métodos Inferenciais Avançados 2/18"
+
+
+#  Regressão Múltipla
+## Estrutura e variáveis
+
+<p class="comando">a. Conheça a estrutura dos dados e explore as variáveis quantitativas e qualitativas. </p>
+
+```{r Data Load}
+# bloco de código - item a
+
+
+NCbirths = read.csv("NCbirths.csv")
+nc_births = NCbirths
+str(nc_births)
+summary(nc_births)
+```
+
+Uma inspeção visual já permite identificar NAs nos campos `Weeks`, `Gained` e `Smoke`, mas os campos que a descrição diz serem categóricos foram tratados como numéricos, e seus sumários não fazem sentido.
+
+
+### Possíveis variáveis dependentes
+
+Não foi especificado um problema para ser estudado. Vejamos como cada campo poderia ser interpretado se fosse a variável dependente. Há dois grupos: Características da mãe e as da gestação e bebê:
+
+#### Maternas
+
+- `MomAge`: Embora se apresente como numérica discreta, pode ser considerada contínua.
+- `Marital`: Categórica com apenas dois valores (Casada ou não)
+- Dados "raciais": `MomRace`, `RaceMom` e `HispMom`, todos categóricos
+- `Smoke`, categórico
+- `Gained`, apesar de ser o peso ganho pela mãe, foi considerado parte da gestação e comentado na seção seguinte
+
+#### Gestação e bebê
+
+- `Plural`: Categórica, pode ser uma logística por Single/Not single
+- `Sex`: Categórica, também pode ser uma logística por Male/Female
+- `Gained`: Contínua
+  - Se for possível prever algum valor, ele pode ser usado para preencher os 40 NAs encontrados.
+- Tempo de gestação:
+    - `Weeks`: Numérica discreta
+    - `Premie`: Categórica, depende de `Weeks`
+- Peso do bebê:
+    - `BirthWeightOz` ou `BirthWeightGm`, numéricas. Em Oz, parece ser apenas inteiro enquanto em g, é float.
+        - Se a conversão estiver correta, basta eliminar uma das colunas. <s>Mas estou curioso para ver se o modelo linear vai mostrar alguma diferença inexistente.</s>
+        - A documentação não diz como interpretar esses valores no caso de gravidez múltipla (`Plural`!= "Single")
+  - `Low`: Categórica. Adequada para logística. Depende integralmente do peso do bebê.
+
+### Prováveis Correlações entre as colunas
+
+- A mais gritante é a do peso dos bebês, a mesma informação em duas unidades.
+- `MomRace`, `HispMom` e `MomRace` (ô povo racista!): Há grande sobreposição entre os conceitos.
+    - TODO: <s>Verificar a sobreposição</s>; tentar converter em uma única coluna
+- `Weeks` e `Premie`: A segunda depende completamente da primeira
+- `BirthWeight{Oz,Gm}` e `Low`: Mesmo caso: A segunda também depende completamente das primeiras
+    - TODO: <s>Verificar se todos os `Low` realmente têm peso menor que 2500g</s>
+
+### Escolhas disponíveis
+Todas as colunas poderiam ser sujeitas a tentativas de explicação, mas suas características são diferentes:
+
+|          | Quantitativas        | Categóricas                  |
+|----------|----------------------|------------------------------|
+| Mãe      | `Gained`¹, `MomAge`  | `Smoke`, `Marital`, "raças"³ |
+| Gestação | `Gained`¹, `Weeks`   | `Plural`, `Premie`           |
+| Bebê     | Peso²                | `Sex`, `Low`                 |
+
+Table: Colunas candidatas a variável dependente, e suas características
+
+As "raças" estão espalhadas por três variáveis: `MomRace`, `RaceMom` e `HispMom`
+
+As variáveis quantitativas podem ser objeto de estudo de modelos lineares, enquanto as categóricas precisam ser explicadas por outros modelos. Em particular, as binárias (`Sex`, `Smoke`, `Marital`, `Premie` e `Low`) poderiam ser estudadas com a regressão logística.
+
+Num contexto humano, não faz sentido prever grupo étnico, estado civil ou idade da mãe com base nos dados disponíveis, então as variáveis `MomAge`, `Marital` e as "raças" não serão objeto de estudo dessa natureza.
+
+<div style='font-size:x-small'>
+1 - Quem ganha o peso é a mãe, mas isso decorre da gravidez  
+2 - O peso é dado em duas unidades, basta ignorar uma delas  
+3 - Geneticamente, o conceito de raça humana [não existe](https://www.eurekalert.org/pub_releases/1998-10/WUiS-GSRD-071098.php), mas [culturalmente](https://en.wikipedia.org/wiki/Race_%28human_categorization%29) a distinção pode ser importante, como no caso do local da origem desses dados.
+</div>
+
+#### Exploração de dados {.tabset .tabset-fade } 
+
+As três variáveis quantitativas que podem (talvez) serem estudadas com regressão linear múltipla são:
+
+- Variação de peso da mãe durante a gestação (`Gained`)
+- Peso do bebê ao nascer (`BirthWeightOz`)
+- Duração da gravidez (`Weeks`)
+
+##### Peso da mãe
+```{r Gained expl, echo=FALSE}
+par(mfrow = c(2, 2))
+boxplot(nc_births$Gained, main="Distribuição geral")
+grp_por_faixa_etaria = transform(nc_births, group=cut(MomAge, breaks = c(-Inf, 18, 24, 30, 35, 40, +Inf), labels = c('<19', '19-24', '25-29', '30-35', '36-40', '>40')))
+boxplot(grp_por_faixa_etaria$Gained ~ grp_por_faixa_etaria$group, main="Ganho de peso por faixa etária", sub="Há pouca variação aparente")
+
+boxplot(grp_por_faixa_etaria$BirthWeightOz ~ grp_por_faixa_etaria$group, main="Peso do bebê por faixa etária da mãe", sub="Não faz sentido")
+
+boxplot(grp_por_faixa_etaria$Weeks ~ grp_por_faixa_etaria$group, main="Duração da gravidez por faixa etária", sub="Há pouca variação aparente")
+
+```
+
+
+###### Correlações simples
+```{r Boxplots, echo=FALSE}
+# boxplot(nc_births$Gained ~ nc_births$MomAge, main="Peso ganho por faixa etária")
+# boxplot(nc_births$Gained ~ nc_births$Weeks, main="Peso ganho por duração da gravidez")
+
+grp_por_duracao = transform(nc_births, group=cut(Weeks, breaks = c(-Inf,  24, 30, 35, 40, +Inf), labels = c('<24', '25-29', '30-35', '36-40', '>40')))
+
+# boxplot(nc_births$Gained ~ nc_births$MomRace + nc_births$RaceMom, main='Peso ganho por "Raça"') # Pouco útil sem fatores
+
+boxplot(grp_por_duracao$Gained ~ grp_por_duracao$group, main="Peso ganho por duração da gravidez")
+
+```
+
+
+
+```{r Gained histogram}
+hist(nc_births$Gained, density = 10, breaks = 30)
+# density(nc_births$Gained)
+sw_gained = shapiro.test(nc_births$Gained)
+
+gained_mean = mean(nc_births$Gained, na.rm = T)
+
+```
+
+A distribuição das frequências de pesos ganhos parece ser normal, com média `r gained_mean` e desvio padrão `r sd(nc_births$Gained, na.rm=T)` (apenas os valores presentes. 40 estão faltando), o resultado de um teste Shapiro-Wil é `r sw_gained$statistic` com $p < 5\%$ (`r sw_gained$p.value`).
+
+##### Peso do bebê
+TODO: adasad
+```{r}
+peso_normal = nc_births[nc_births$Low==0,]
+baixo_peso = nc_births[nc_births$Low==1,]
+
+par(mfrow = c(1, 2))
+boxplot(peso_normal$BirthWeightOz,
+        main="Bebês com peso acima de 2500g")
+
+boxplot(baixo_peso$BirthWeightOz,
+        main="Bebês com peso baixo")
+par(mfrow = c(1, 3))
+hist(nc_births$BirthWeightOz, breaks=25, 
+#     xlab="Semanas de gestação",
+     main="Peso do bebê (geral)")
+hist(peso_normal$BirthWeightOz, breaks=25,
+     main="Peso normal")
+hist(baixo_peso$BirthWeightOz, breaks=25,
+     main="Baixo Peso")
+```
+
+##### Duração da gravidez
+
+###### Distribuição de frequências
+
+```{r distribuição freq Weeks, echo=FALSE}
+par(mfrow = c(2, 2))
+hist(nc_births$Weeks, breaks=30, 
+     xlab="Semanas de gestação",
+     main="Histograma da duração da gravidez",
+     sub = "vermelho=premturos, azul=média")
+abline(v=36, col="red")  # Linha dos prematuros
+abline(v=mean(nc_births$Weeks, na.rm = T), col="blue")
+text(10, 5, "Teste")
+
+plot(density(nc_births$Weeks, na.rm = T),
+     main="DPF das durações de gestação")
+abline(v=36, col="red")
+abline(v=mean(nc_births$Weeks, na.rm = T), col="blue")
+
+qqnorm(nc_births$Weeks)
+
+
+sw_weeks = shapiro.test(nc_births$Weeks)
+sww_W = format(round(sw_weeks$statistic[[1]], 4), nsmall = 4)
+sww_p = format(round(sw_weeks$p.value[[1]], 4), nsmall = 4)
+media_weeks = format(round(mean(nc_births$Weeks, na.rm = T), 3))
+dp_weeks = format(round(sd(nc_births$Weeks, na.rm = T), 3))
+```
+
+A distribuiçã das frequências de duração da gravidez é enviesada em direção à duração esperada da gestação a termo: 40 semanas após a última menstruação, 38 após a fertilização, e não pode ser considerada uma distribuição Normal (Teste Shapiro-Wilk: W=`r sww_W`, $p=`r sw_weeks$p.value`$).
+
+A média é `r media_weeks` e o desvio padrão é de `r dp_weeks`.
+
+```{r boxplots Weeks, echo=FALSE}
+prematuros = nc_births[nc_births$Premie == 1,]$Weeks
+nascidos_a_termo = nc_births[nc_births$Premie == 0,]$Weeks
+
+```
+
+
+----
+### Verificação das observações
+
+#### Peso do bebê: a conversão está correta?
+O peso do bebÊ é dado tanto em onças (Oz) quanto em gramas (g). Se não houver erros de conversão de unidade de massa, basta eliminar uma delas, pois têm rigorosamente a mesma informação.
+
+Uma eventual divergência, no entanto, pode indicar erros graves na coleta e/ou registro dos dados, e uma escolha mais complexa precisa ser feita.
+```{r verifica conversões de unidade de massa do bebê}
+# bloco de código - item b
+
+summary(nc_births$BirthWeightGm/nc_births$BirthWeightOz)
+if (mean(nc_births$BirthWeightGm/nc_births$BirthWeightOz)/max(nc_births$BirthWeightGm/nc_births$BirthWeightOz) != 1 ) {
+  error("Há um erro de conversão entre Oz e g")
+} else {
+  if (max(nc_births$BirthWeightGm/nc_births$BirthWeightOz) == 28.35)  {
+    print("Todas as conversões de unidade estão corretas")
+  } else {
+    print("Embora consistentes, as conversões não estão corretas")
+  }
+}
+
+
+```
+
+Conclui-se que as colunas `BirthWeightGm` e `BirthWeightOz` contêm informação idêntica, e uma delas pode ser ignorada com segurança.
+
+#### Erros aparentes
+
+Parece haver uma confusão no registro de raças. Há três campos para isso, e encontrei pelo menos uma inconsistência no aparente registro de mães hispânicas como japonesas:
+```{r Verifica Raças}
+for (race in unique(nc_births$MomRace)) { print(paste(race, nrow(nc_births[nc_births$MomRace == race,])))}  # TODO Um Summary não seria melhor?
+
+
+summary(nc_births[nc_births$MomRace=="hispanic", c("RaceMom", "HispMom")])  # Mostra que `RaceMom` é 5 para todas com `MomRace == hispanic`
+JapasSoQueNao = nrow(nc_births[nc_births$RaceMom==5,])  # "Japanese", só que não
+print(paste("Registros marcados como mães japonesas: ", JapasSoQueNao))
+
+print("Mães com RaceMom == 5")
+summary(nc_births[nc_births$RaceMom==5, c("MomRace", "HispMom")])
+```
+Aparentemente, os 164 registros de mães "japonesas" na verdade são hispânicas com a marca incorreta no campo `RaceMom` mas correto em `MomRace`. O que me leva a crer que o correto seria considerar todas como hispânicas é a variedade do campo `HispMom`, que tem apenas 3 marcadas como "Other hispanic" (e que ainda não sei se há alguma chance de serem japonesas), e a ausência de uma marca "Not hispanic".
+
+O campo `Low`, segundo a descrição, chama a atenção para bebês cujo peso ao nascer é inferior a 2500g.
+
+```{r Verifica Low}
+# summary(nc_births[nc_births$Low == "Y", c("BirthWeightOz", "BirthWeightGm")])
+# summary(nc_births[nc_births$Low == "N", c("BirthWeightOz", "BirthWeightGm")])
+
+# summary(nc_births[nc_births$BirthWeightGm > 2500, c("Low", "BirthWeightOz", "BirthWeightGm")])
+nrow(nc_births[nc_births$BirthWeightGm > 2500 & nc_births$Low=='Y', c("Low", "BirthWeightOz", "BirthWeightGm")])  # Deve ser zero
+nrow(nc_births[nc_births$BirthWeightGm <= 2500 & nc_births$Low=='N', c("Low", "BirthWeightOz", "BirthWeightGm")])  # Deve ser zero
+
+```
+
+Foi confirmado que, realmente, os registros marcados como `Low==Y` todos têm peso abaixo de 2500g, e os marcados com `Low==N` todos têm peso acima do informado na documentação. De forma simétrica, nenhum registro inconsistente (isto é, com marca incorreta) foi encontrado, o que caracteriza uma dependência completa.
+
+Por isso, esse campo pode seguramente ser ignorado nas regressões.
+
+
+#### Valores ausentes
+Por inspeção visual, foi possível detectar valores ausentes nas colunas `Weeks`(1), `Smoke`(5) e `Gained`(40). Faremos avaliação de cada caso assim que der.
+
+<p `r cssTODO`>TODO: Avaliar casos ausentes </p>
+
+```{r Check NA}
+col.sums = colSums(is.na(nc_births))
+col.sums[col.sums>0]  # Verificação programática de quais colunas têm NAs
+
+nc_births<- cbind(nc_births, somaNulos = rowSums(is.na(nc_births)))
+NCB_NAs = nc_births[nc_births$somaNulos > 0,]
+NCBnoNAs = nc_births[complete.cases(nc_births),]
+
+```
+
+Parece preocupante a grande quantidade de ausências em `Gained`, que corresponde a `r col.sums["Gained"]/nrow(nc_births)*100`% das linhas. A estratégia ideal depende da alavancagem desses registros.
+
+
+#### Fatores
+
+Segundo a [documentação](NCbirths.html) do DataSet, várias dessas colunas podem ser convertidas em fatores:
+
+```{r Fatorizar o data frame}
+# Fatorizar o que der
+source("factorize.R")
+
+nc_births = NCB_noId(nc_births)
+nc_births = NCB_factorize(nc_births)
+
+ncb_births_noGainedNA = nc_births[!is.na(nc_births$Gained), ]
+ncb_births_noGainedNA = ncb_births_noGainedNA[ncb_births_noGainedNA$somaNulos == 0, ]
+
+# Remover coluna desnecessária
+ncb_births_noGainedNA$somaNulos <- NULL
+nc_births$somaNulos <- NULL
+```
+
+```{r Mais análises}
+
+# boxplot(nc_births$Gained ~ nc_births$MomRace + nc_births$RaceMom, main='Peso ganho por "Raça"') # Pouco útil sem fatores
+```
+
+## Análises marginais e multivariadas {.tabset .tabset-fade } 
+<!--.tabset-pills} -->
+
+b.	<span class="comando">Faça análises marginais e multivariadas. </span>
+
+
+### Peso da mãe {.tabset .tabset-fade .tabset-pills} 
+
+Tentativa de explicar o peso ganho em função das outras variáveis.
+
+
+#### Modelo 1: Naïve
+```{r Gained 1}
+# summary(lm(Gained ~ ., data=nc_births))  # Ficou igual porque lm() eliminou as linhas sem valores para Gained
+fit_gained1 = lm(Gained ~ ., data=ncb_births_noGainedNA)
+summary(fit_gained1)
+
+```
+Curiosamente, vários campos que eu marquei para exclusão aparecem como NA no sumário, mas não todos: `Low` foi considerado, mas ficou terrivelmente insignificante.
+
+Esse modelo explica apenas 8% do resultado. Será que existem modelos melhores?
+```{r Gained pairs graph}
+
+# pairs(Gained ~ ., data=nc_births)
+pairs(Gained ~ Plural + MomAge + Weeks + BirthWeightOz, 
+      data=nc_births,
+      main = "Correlações entre os campos mais significativos"
+      )
+
+# fit_gained1_noNAs = lm(Gained ~ ., data=nc_births, na.action = na.omit) 
+# summary(fit_gained1_noNAs)
+
+# NCBnoNAs = nc_births[]
+
+```
+
+Não parece haver correlação nenhuma entre esses campos! O único padrão relevante é a já conhecida relação entre a idade gestacional do nascituro e o peso ao nascer: quanto mais próximo do termo (40 semanas), mais pesado; depois do termo, nem tanto.
+
+#### Modelo 2: Menos é mais
+
+Com base no sumário do modelo naïve, pode-se ver que os campos `Plural` e `BirthWeightOz` foram os únicos significativos.
+
+```{r}
+fit_gained2 = lm(Gained ~ Plural + BirthWeightOz, data = ncb_births_noGainedNA)
+summary(fit_gained2)
+
+anova(fit_gained1, fit_gained2)
+
+```
+
+Como resultado, todos os coeficientes são altamente significativos, e a análise de variância informa uma queda de mais de 8000 pontos na soma dos quadrados dos resíduos. Entretanto, o poder de explicação caiu para 6,34%. 
+
+Concluo que não vale a pena tentar prever o peso ganho durante a gestação com base nssses dados.
+
+### Peso do bebê  {.tabset .tabset-fade .tabset-pills} 
+
+#### Modelo 3: Naïve
+
+Da mesma forma que no modelo 1, vejamos com o que se parece um modelo com "tudo" dentro. Entretanto, como há campos com forte correlação entre si e com a variável dependente, precisamos nos livrar antes de:
+
+- BirthWeightGm
+- Low
+
+Além disso, os 40 casos de ganho de peso ausentes precisam ser avaliados para uma tomada de decisão.
+```{r}
+
+ncb_weight = nc_births[,c("Plural", "Sex",    "MomAge", "Weeks",  "Marital",
+                         "RaceMom",  "HispMom", "Gained", "Smoke",
+                         "BirthWeightOz", "Premie", "MomRace")]
+
+ncb_weight_noNAs = ncb_births_noGainedNA[c("Plural", "Sex",    "MomAge", "Weeks",  "Marital",
+                         "RaceMom",  "HispMom", "Gained", "Smoke",
+                         "BirthWeightOz", "Premie", "MomRace"),]
+
+summary(lm(BirthWeightOz ~ ., data=ncb_weight, na.action = na.omit))
+
+
+```
+
+
+### Tempo de gestação
+
+TODO: Modelos
+```{r}
+
+```
+
+
+## Verificação de premissas do modelo linear
+
+<span id="comm_c" class="comando">c.	Verifique as premissas do modelo linear.</span>
+
+- Resíduos
+  - Independência: os erros são independentes entre si 
+  - Normalidade: 
+  - Homocedasticidade (variância constante)
+  - Linearidade
+
+### Modelo 1: Naïve
+```{r verificar propriedades dos residuos, echo=FALSE}
+source("verifica_residuos.R")
+
+pro_res_1 = verifica_props_residuos(
+  fit_gained1$residuals,
+  ncb_births_noGainedNA$Gained,
+  fit_gained1$fitted.values
+  )
+
+if (pro_res_1$is.small) {
+    print("Propriedades do modelo 1 OK")
+  } else {
+  print("Alguma propriedade do modelo 1 não tem o valor esperado:")
+  print_props_residuos(pro_res_1)
+}
+```
+
+
+
+```{r fit_gained_ajustado_vs_residuo}
+# bloco de código - item c
+plot(predict(fit_gained1), resid(fit_gained1),   # data=nc_births,
+     main="Valores ajustados versus resíduos para modelo Naïve")
+
+par(mfrow=c(2,2))
+plot(fit_gained1)
+par(mfrow=c(1,1))
+
+```
+
+### Modelo 2: Menos é mais
+
+```{r avaliar modelo 2}
+
+pro_res_2 = verifica_props_residuos(
+  fit_gained2$residuals,
+  ncb_births_noGainedNA$Gained,
+  fit_gained2$fitted.values
+  )
+
+if (pro_res_2$is.small) {
+    print("Propriedades do modelo 2 OK")
+  } else {
+  print("Alguma propriedade do modelo 2 não tem o valor esperado:")
+  print_props_residuos(pro_res_2)
+}
+
+plot(predict(fit_gained2), resid(fit_gained2),   # data=nc_births,
+     main="Valores ajustados versus resíduos para modelo 2 (aprimorado)")
+
+par(mfrow=c(2,2))
+plot(fit_gained2)
+par(mfrow=c(1,1))
+
+
+```
+
+TODO: Interpretação (nada se destaca aí)
+
+### Modelo 3: Peso do bebê
+
+O gráfico de resíduos x valores ajustados apresenta uma forte heterodascidade, com uma grande concentração em volta de 123 Oz.
+
+### Modelo X: Duração da gravidez
+
+## Propostas
+
+<span class="comando">d. Proposta de modelo</span>
+
+Com base nas análises, proponha um ou mais modelos lineares multivariados. Explique a sua escolha.
+
+```{r}
+# bloco de código - item d
+
+
+
+```
+
+### Predições
+
+e. <span class="comando">Utilize o(s) modelo(s) proposto(s) para fazer pelo menos uma predição.</span>
+
+```{r}
+# bloco de código - item e
+
+
+
+```
+
+# Conclusões e comentários
+
+## Comentários
+
+Em retrospecto, penso que teria perdido menos tempo se tivesse feito uma simples análise do R² ajustado de todas as variáveis numéricas (já que são poucas). Minha primeira escolha foi justamente a que tem menor potencial de explicação, com os dados disponíveis.
+
+Esses valores sugerem um limite superior para o poder de explicação de um modelo linear que explique as obervações de cara uma dessas variáveis.
+
+Os dados da tabela abaixo foram obtidos da execução do script [varios_modelos.R](varios_modelos.R), ideia que só tive perto do final do prazo para entregar o exercício.
+
+| Coluna | R² ajustado        |
+|--------|--------------------|
+| MomAge |  0.239690016396153 |
+| Weeks  |  0.588115108607321 |
+| Gained |  0.0818566109518561 |
+| BirthWeightOz |  0.568165398604105 |
+
+Table: R² ajustado de modelos naïve para variáveis quantitativas
+
+## Suspeitas
+
+Até agora, parece não haver evidências suficientes para compor um modelo linear do peso ganho em função de algumas das outras variáveis. O máximo possível de explicação é de 8% com todos os campos, e vários deles geram coeficientes sem significância estatística ($p>5\%$).
+
+Quando passei a considerar o peso do bebê ao nascer (BirthWeightOz) como variável dependente, obtive modelos com maior poder de predição ($ {R_{ajust}}^2 > 40\%$)
+
+## ENTREGA EM 31/10/2018, ÀS 23h59.
+
+
