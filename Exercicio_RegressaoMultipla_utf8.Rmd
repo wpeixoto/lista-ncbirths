@@ -15,7 +15,7 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-cssTODO = 'style="tex-decoration:underline; background:green'
+cssTODO = 'style="text-decoration:underline; background:green"'
 ```
 
 # Introdução
@@ -131,11 +131,13 @@ boxplot(grp_por_faixa_etaria$Weeks ~ grp_por_faixa_etaria$group, main="Duração
 ###### Correlações simples
 ```{r Boxplots, echo=FALSE}
 # boxplot(nc_births$Gained ~ nc_births$MomAge, main="Peso ganho por faixa etária")
-boxplot(nc_births$Gained ~ nc_births$Weeks, main="Peso ganho por duração da gravidez")
+# boxplot(nc_births$Gained ~ nc_births$Weeks, main="Peso ganho por duração da gravidez")
 
-grp_por_duracao = transform(nc_births, group=cut(Weeks, breaks = c(-Inf, 18, 24, 30, 35, 40, +Inf), labels = c('<19', '19-24', '25-29', '30-35', '36-40', '>40')))
+grp_por_duracao = transform(nc_births, group=cut(Weeks, breaks = c(-Inf,  24, 30, 35, 40, +Inf), labels = c('<24', '25-29', '30-35', '36-40', '>40')))
 
 # boxplot(nc_births$Gained ~ nc_births$MomRace + nc_births$RaceMom, main='Peso ganho por "Raça"') # Pouco útil sem fatores
+
+boxplot(grp_por_duracao$Gained ~ grp_por_duracao$group, main="Peso ganho por duração da gravidez")
 
 ```
 
@@ -321,13 +323,14 @@ nc_births$somaNulos <- NULL
 b.	<span class="comando">Faça análises marginais e multivariadas. </span>
 
 
-### Peso da mãe
+### Peso da mãe {.tabset .tabset-fade .tabset-pills} 
 
 Tentativa de explicar o peso ganho em função das outras variáveis.
 
 
 #### Modelo 1: Naïve
 ```{r Gained 1}
+# summary(lm(Gained ~ ., data=nc_births))  # Ficou igual porque lm() eliminou as linhas sem valores para Gained
 fit_gained1 = lm(Gained ~ ., data=ncb_births_noGainedNA)
 summary(fit_gained1)
 
@@ -366,11 +369,30 @@ anova(fit_gained1, fit_gained2)
 
 Como resultado, todos os coeficientes são altamente significativos, e a análise de variância informa uma queda de mais de 8000 pontos na soma dos quadrados dos resíduos. Entretanto, o poder de explicação caiu para 6,34%. 
 
+Concluo que não vale a pena tentar prever o peso ganho durante a gestação com base nssses dados.
 
-### Peso do bebê
+### Peso do bebê  {.tabset .tabset-fade .tabset-pills} 
 
-TODO: Modelo 3:
+#### Modelo 3: Naïve
+
+Da mesma forma que no modelo 1, vejamos com o que se parece um modelo com "tudo" dentro. Entretanto, como há campos com forte correlação entre si e com a variável dependente, precisamos nos livrar antes de:
+
+- BirthWeightGm
+- Low
+
+Além disso, os 40 casos de ganho de peso ausentes precisam ser avaliados para uma tomada de decisão.
 ```{r}
+
+ncb_weight = nc_births[,c("Plural", "Sex",    "MomAge", "Weeks",  "Marital",
+                         "RaceMom",  "HispMom", "Gained", "Smoke",
+                         "BirthWeightOz", "Premie", "MomRace")]
+
+ncb_weight_noNAs = ncb_births_noGainedNA[c("Plural", "Sex",    "MomAge", "Weeks",  "Marital",
+                         "RaceMom",  "HispMom", "Gained", "Smoke",
+                         "BirthWeightOz", "Premie", "MomRace"),]
+
+summary(lm(BirthWeightOz ~ ., data=ncb_weight, na.action = na.omit))
+
 
 ```
 
@@ -388,12 +410,13 @@ TODO: Modelos
 <span id="comm_c" class="comando">c.	Verifique as premissas do modelo linear.</span>
 
 - Resíduos
-  - Independência
-  - Normalidade
-  - Homocedasticidade
+  - Independência: os erros são independentes entre si 
+  - Normalidade: 
+  - Homocedasticidade (variância constante)
   - Linearidade
 
-```{r verificar propriedades dos residuos}
+### Modelo 1: Naïve
+```{r verificar propriedades dos residuos, echo=FALSE}
 source("verifica_residuos.R")
 
 pro_res_1 = verifica_props_residuos(
@@ -402,7 +425,9 @@ pro_res_1 = verifica_props_residuos(
   fit_gained1$fitted.values
   )
 
-if (!pro_res_1$is.small) {
+if (pro_res_1$is.small) {
+    print("Propriedades do modelo 1 OK")
+  } else {
   print("Alguma propriedade do modelo 1 não tem o valor esperado:")
   print_props_residuos(pro_res_1)
 }
@@ -415,15 +440,50 @@ if (!pro_res_1$is.small) {
 plot(predict(fit_gained1), resid(fit_gained1),   # data=nc_births,
      main="Valores ajustados versus resíduos para modelo Naïve")
 
+par(mfrow=c(2,2))
+plot(fit_gained1)
+par(mfrow=c(1,1))
+
+```
+
+### Modelo 2: Menos é mais
+
+```{r avaliar modelo 2}
+
+pro_res_2 = verifica_props_residuos(
+  fit_gained2$residuals,
+  ncb_births_noGainedNA$Gained,
+  fit_gained2$fitted.values
+  )
+
+if (pro_res_2$is.small) {
+    print("Propriedades do modelo 2 OK")
+  } else {
+  print("Alguma propriedade do modelo 2 não tem o valor esperado:")
+  print_props_residuos(pro_res_2)
+}
+
 plot(predict(fit_gained2), resid(fit_gained2),   # data=nc_births,
      main="Valores ajustados versus resíduos para modelo 2 (aprimorado)")
+
+par(mfrow=c(2,2))
+plot(fit_gained2)
+par(mfrow=c(1,1))
 
 
 ```
 
+TODO: Interpretação (nada se destaca aí)
+
+### Modelo 3: Peso do bebê
+
+O gráfico de resíduos x valores ajustados apresenta uma forte heterodascidade, com uma grande concentração em volta de 123 Oz.
+
+### Modelo X: Duração da gravidez
+
 ## Propostas
 
-d.	<span class="comando">Proposta de modelo</span>
+<span class="comando">d. Proposta de modelo</span>
 
 Com base nas análises, proponha um ou mais modelos lineares multivariados. Explique a sua escolha.
 
