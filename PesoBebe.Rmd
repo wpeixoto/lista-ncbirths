@@ -1,0 +1,186 @@
+---
+title: "Peso do bebê"
+author: "William Peixoto"
+date: "knit mais recente: `r format(Sys.Date(), format = '%d de %B %Y')`" 
+output: 
+  html_document:
+    theme: cosmo  # TODO Achar um tema com melhor contraste nos resultados dos blocos
+    highlight: zenburn  # espresso  # pygments
+#    css: Rmd_001.css
+    css: Extra.css
+    toc: True
+    # number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+cssTODO = 'style="text-decoration:underline; background:green"'
+```
+
+# Análise do peso do bebê
+
+Exercício de Métodos Inferenciais Avançados 2/18
+
+
+```{r Data Load, echo=FALSE}
+# bloco de código - item a
+
+
+NCbirths = read.csv("NCbirths.csv")
+nc_births = NCbirths
+# str(nc_births)
+# summary(nc_births)
+
+# col.sums = colSums(is.na(nc_births))
+# col.sums[col.sums>0]  # Verificação programática de quais colunas têm NAs
+
+nc_births<- cbind(nc_births, somaNulos = rowSums(is.na(nc_births)))
+NCB_NAs = nc_births[nc_births$somaNulos > 0,]
+NCBnoNAs = nc_births[complete.cases(nc_births),]
+
+```
+
+```{r Fatorizar o data frame, echo=FALSE}
+# Fatorizar o que der
+source("factorize.R")
+
+nc_births = NCB_noId(nc_births)
+nc_births = NCB_factorize(nc_births)
+
+ncb_births_noGainedNA = nc_births[!is.na(nc_births$Gained), ]
+ncb_births_noGainedNA = ncb_births_noGainedNA[ncb_births_noGainedNA$somaNulos == 0, ]
+
+COLS_W = c("Plural", "Sex",    "MomAge", "Weeks",  "Marital",
+           "RaceMom",  "HispMom", "Gained", "Smoke",
+           "BirthWeightOz", "Premie", "MomRace")
+ncb_weight = nc_births[, COLS_W]
+ncb_weight_noNAs = ncb_births_noGainedNA[, COLS_W]
+
+# Remover coluna desnecessária
+ncb_births_noGainedNA$somaNulos <- NULL
+nc_births$somaNulos <- NULL
+```
+
+### Peso do bebê  {.tabset .tabset-fade .tabset-pills} 
+
+#### Modelo 3: Naïve
+
+Da mesma forma que no modelo 1, vejamos com o que se parece um modelo com "tudo" dentro. Entretanto, como há campos com forte correlação entre si e com a variável dependente, precisamos nos livrar antes de:
+
+- BirthWeightGm
+- Low
+
+Além disso, os 40 casos de ganho de peso ausentes precisam ser avaliados para uma tomada de decisão.
+```{r}
+
+
+# ncb_weight_noNAs = complete.cases(ncb_weight)
+
+fit_weight_1 = lm(BirthWeightOz ~ ., data=ncb_weight, na.action = na.omit)
+summary(fit_weight_1)
+
+
+```
+
+Chama a atenção o coeficiente para `RaceMomFilipino`, com valor absoluto elevado e com significância de 0.055637, perto do limite escolhido para $\alpha$. Existe exatamente 1 registro de mãe com essa etnia.
+
+```{r}
+ncb_weight_NF = ncb_weight[ncb_weight$RaceMom != "Filipino",]
+fit_weight_1b = lm(BirthWeightOz ~ ., data=ncb_weight_NF, na.action = na.omit)
+summary(fit_weight_1b)
+
+```
+
+
+#### Modelo 4: Menos é mais de novo
+Baseado no contexto e nos valores observados das significâncias dos coeficientes do modelo 3, seleciono um conjunto menor de colunas para comparar...
+```{r}
+#COLSET_01 = c("Plural", "Sex",    "MomAge", "Weeks", 
+#              "Gained", "Smoke",
+#              "BirthWeightOz")
+
+fit_weight_2 = lm(BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke,
+                  data = ncb_weight)
+summary(fit_weight_2)
+
+fit_weight_2b = lm(BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke,
+                  data = ncb_weight_NF)
+summary(fit_weight_2b)
+
+anova(fit_weight_1, fit_weight_2)
+
+anova(fit_weight_1b, fit_weight_2b)
+```
+
+#### Modelo 5: Dá pra colocar algo de volta?
+
+```{r}
+fit_weight_5 = lm(BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke + RaceMom, data = ncb_weight)
+summary(fit_weight_5)
+
+fit_weight_5b = lm(BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke + MomRace, data = ncb_weight)
+summary(fit_weight_5b)
+
+fit_weight_5c = lm(BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke + HispMom, data = ncb_weight)
+summary(fit_weight_5c)
+
+anova(fit_weight_1, fit_weight_2, fit_weight_5, fit_weight_5b, fit_weight_5c)
+```
+
+A inclusão dos campos étnicos prejudicou o modelo, pois os erros cresceram ou ficaram confusos (p>0.05).
+
+## Verificação de premissas do modelo linear
+
+<span id="comm_c" class="comando">c.	Verifique as premissas do modelo linear.</span>
+
+- Resíduos
+  - Independência: os erros são independentes entre si 
+  - Normalidade: 
+  - Homocedasticidade (variância constante)
+  - Linearidade
+
+### Peso do bebê Modelo 3: Naïve
+
+```{r}
+plot(fit_weight_1)
+plot(fit_weight_1b)
+```
+
+
+O gráfico de resíduos x valores ajustados apresenta uma forte heterodascidade, com uma grande concentração em volta de 123 Oz.
+
+#### Revisão "b"
+```{r}
+plot(fit_weight_1b)
+```
+
+
+## Propostas
+
+<span class="comando">d. Proposta de modelo</span>
+
+Com base nas análises, proponha um ou mais modelos lineares multivariados. Explique a sua escolha.
+
+```{r}
+# bloco de código - item d
+
+
+
+```
+
+### Predições
+
+e. <span class="comando">Utilize o(s) modelo(s) proposto(s) para fazer pelo menos uma predição.</span>
+
+```{r}
+# bloco de código - item e
+
+
+
+```
+
+
+## ENTREGA EM 31/10/2018, ÀS 23h59.
+
+
