@@ -45,15 +45,22 @@ NCBnoNAs = nc_births[complete.cases(nc_births),]
 # Fatorizar o que der
 source("factorize.R")
 
+useEtn = TRUE
+
 nc_births = NCB_noId(nc_births)
-nc_births = NCB_factorize(nc_births)
+nc_births = NCB_factorize(nc_births, useEtn)
 
 ncb_births_noGainedNA = nc_births[!is.na(nc_births$Gained), ]
 ncb_births_noGainedNA = ncb_births_noGainedNA[ncb_births_noGainedNA$somaNulos == 0, ]
 
-COLS_W = c("Plural", "Sex",    "MomAge", "Weeks",  "Marital",
+if (useEtn) {
+  COLS_W = c("Plural", "Sex",    "MomAge", "Weeks",  "Marital",
+           "Gained", "Smoke", "BirthWeightOz", "Premie", "Etnicidade")
+} else {
+  COLS_W = c("Plural", "Sex",    "MomAge", "Weeks",  "Marital",
            "RaceMom",  "HispMom", "Gained", "Smoke",
            "BirthWeightOz", "Premie", "MomRace")
+}
 ncb_weight = nc_births[, COLS_W]
 ncb_weight_noNAs = ncb_births_noGainedNA[, COLS_W]
 
@@ -73,8 +80,6 @@ Da mesma forma que no modelo 1, vejamos com o que se parece um modelo com "tudo"
 
 Além disso, os 40 casos de ganho de peso ausentes precisam ser avaliados para uma tomada de decisão.
 ```{r}
-
-
 # ncb_weight_noNAs = complete.cases(ncb_weight)
 
 fit_weight_1 = lm(BirthWeightOz ~ ., data=ncb_weight, na.action = na.omit)
@@ -85,10 +90,25 @@ summary(fit_weight_1)
 
 Chama a atenção o coeficiente para `RaceMomFilipino`, com valor absoluto elevado e com significância de 0.055637, perto do limite escolhido para $\alpha$. Existe exatamente 1 registro de mãe com essa etnia.
 
-```{r}
-ncb_weight_NF = ncb_weight[ncb_weight$RaceMom != "Filipino",]
+```{r Modelo sem a mãe filipina}
+if (useEtn) {
+  ncb_weight_NF = ncb_weight[ncb_weight$Etnicidade != "filipino",]
+} else {
+  ncb_weight_NF = ncb_weight[ncb_weight$RaceMom != "Filipino",]
+}
 fit_weight_1b = lm(BirthWeightOz ~ ., data=ncb_weight_NF, na.action = na.omit)
 summary(fit_weight_1b)
+
+```
+##### Análise de inflação
+
+```{r inflação modelo 3}
+library(car)
+vif(fit_weight_1)
+
+```
+
+```{r inflação modelo 3b}
 
 ```
 
@@ -120,16 +140,22 @@ anova(fit_weight_1b, fit_weight_2b)
 #### Modelo 5: Dá pra colocar algo de volta?
 
 ```{r}
-fit_weight_5 = lm(BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke + RaceMom, data = ncb_weight)
-summary(fit_weight_5)
+if (useEtn) {
+  fit_weight_5 = lm(BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke + Etnicidade, data=ncb_weight)
+  anova(fit_weight_1, fit_weight_5)
+} else {
+  fit_weight_5 = lm(BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke + RaceMom, data = ncb_weight)
+  summary(fit_weight_5)
+  
+  fit_weight_5b = lm(BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke + MomRace, data = ncb_weight)
+  summary(fit_weight_5b)
+  
+  fit_weight_5c = lm(BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke + HispMom, data = ncb_weight)
+  summary(fit_weight_5c)
+  anova(fit_weight_1, fit_weight_2, fit_weight_5, fit_weight_5b, fit_weight_5c)
+}
 
-fit_weight_5b = lm(BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke + MomRace, data = ncb_weight)
-summary(fit_weight_5b)
 
-fit_weight_5c = lm(BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke + HispMom, data = ncb_weight)
-summary(fit_weight_5c)
-
-anova(fit_weight_1, fit_weight_2, fit_weight_5, fit_weight_5b, fit_weight_5c)
 ```
 
 A inclusão dos campos étnicos prejudicou o modelo, pois os erros cresceram ou ficaram confusos (p>0.05).
