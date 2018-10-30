@@ -95,6 +95,10 @@ summary(fit_weight_1b)
 
 #### Modelo 4: Menos é mais de novo
 Baseado no contexto e nos valores observados das significâncias dos coeficientes do modelo 3, seleciono um conjunto menor de colunas para comparar...
+
+- Há estudos confirmando que o tabagismo introduz riscos para a gravidez. Um deles é o nascimento de bebês com menor peso.
+- Getação múltipla é considerada de alto risco, com maior índice de partos prematuros e consequente peso menor ao nascer.
+- O índice de massa corporal da gestante, segundo um estudo realizado pelo Cincinnati Children’s Hospital Medical Center do estado de Ohio, nos Estados Unidos, pode estar ligado a 25% dos nascimentos prematuros.
 ```{r}
 #COLSET_01 = c("Plural", "Sex",    "MomAge", "Weeks", 
 #              "Gained", "Smoke",
@@ -130,6 +134,10 @@ anova(fit_weight_1, fit_weight_2, fit_weight_5, fit_weight_5b, fit_weight_5c)
 
 A inclusão dos campos étnicos prejudicou o modelo, pois os erros cresceram ou ficaram confusos (p>0.05).
 
+#### Modelo 6: Uma variável explica mais
+
+TODO: Comparar modelo só com `Weeks` com outro sem.
+
 ## Verificação de premissas do modelo linear
 
 <span id="comm_c" class="comando">c.	Verifique as premissas do modelo linear.</span>
@@ -140,10 +148,15 @@ A inclusão dos campos étnicos prejudicou o modelo, pois os erros cresceram ou 
   - Homocedasticidade (variância constante)
   - Linearidade
 
-### Peso do bebê Modelo 3: Naïve
+### Peso do bebê Modelo 3: Naïve {.tabset .tabset-fade } 
 
+#### Com a mãe filipina
 ```{r}
 plot(fit_weight_1)
+```
+
+#### Sem a  filipina
+```{r}
 plot(fit_weight_1b)
 ```
 
@@ -176,8 +189,27 @@ e. <span class="comando">Utilize o(s) modelo(s) proposto(s) para fazer pelo meno
 ```{r}
 # bloco de código - item e
 
+weeks = c(10,  # Poucas chances de sobrevivência
+          11,
+          23,  # 17% de sobrevivência
+          25,
+          39,  # termo
+          39.5,
+          40.2,
+          44,
+          45,
+          46,  # risco 
+          47)
 
+gained = c(0.5, 11.3, 43.8, 100, 110)
 
+age = c(4, 6, 8, 10, 12, 14,  # Abaixo 
+        21.5, 29.3,           # no meio
+        44, 45, 46, 60)       # acima
+
+underage_premie = list(Plural="Single", MomAge=10, Sex="M", Weeks=20, Gained=5, Smoke="N")
+
+predict(fit_weight_2, underage_premie)
 ```
 
 
