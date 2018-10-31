@@ -400,7 +400,10 @@ comparaCoeficientes(summary(fit_weight_7), sf1)  # , sf2, sf6)
   - Linearidade
 
 ## Sumário
+
+### Normalidade
 ```{r}
+library(knitr)
 modelss = list(
  fit_weight_1,
  fit_weight_1b,
@@ -425,7 +428,7 @@ models.residuals = list(
  fit_weight_W$residuals 
 )
 
-names(models.residuals) = c(
+models.names = c(
  "fit_weight_1",
  "fit_weight_1b",
  "fit_weight_2",
@@ -435,10 +438,12 @@ names(models.residuals) = c(
  "fit_weight_7",
  "fit_weight_W"  
 )
+names(models.residuals) = models.names
 
 N = length(models.residuals)
 sw = data.frame(
   name = character(),
+  # name = factor(levels = models.names),
   W = numeric(),
   p.value = numeric(),
   # name = character(N),
@@ -450,27 +455,42 @@ sw = data.frame(
 n = 1
 nn = names(models.residuals)[2]
 for (nn in names(models.residuals)) {
-  print(nn)
-  print(shapiro.test(models.residuals[[nn]]))
-  # tt = shapiro.test(models.residuals[[nn]])
-  # sw = rbind(sw, list(
-  #   name = as.character(nn),
-  #   W = as.numeric(tt[1]),
-  #   p.value = as.numeric(tt[2])
-  # ))
+  # print(nn)
+  # print(shapiro.test(models.residuals[[nn]]))
+  tt = shapiro.test(models.residuals[[nn]])
+  sw = rbind(sw, data.frame(
+    name = as.character(nn),
+    W = as.numeric(tt[1]),
+    p.value = as.numeric(tt[2])
+  ))
 }
+
+kable(sw)
+
+```
+
+Os resíduos dos modelos 6 e 7 tem sua estatística W abaixo de 96%. Todos os outros ficara acima de 99%. Seus gráficos Q-Q apresentam deformidades que levantam suspeitas de que não sejam ~N.
+
+```{r}
+# for (m in modelss) {
+  # qqnorm(m)
+# }
 ```
 
 
-## Peso do bebê Modelo 3: Naïve {.tabset .tabset-fade } 
+## Modelos {.tabset .tabset-fade } 
 
-### Com a mãe filipina
+Peso do bebê
+
+###  Modelo 3: Naïve {.tabset .tabset-fade } 
+
+#### Com a mãe filipina
 ```{r}
 par(mfrow = c(2, 2))
 plot(fit_weight_1)
 ```
 
-### Sem a  filipina
+#### Sem a  filipina
 ```{r}
 par(mfrow = c(2, 2))
 plot(fit_weight_1b)
@@ -480,18 +500,21 @@ plot(fit_weight_1b)
 O gráfico de resíduos x valores ajustados apresenta uma forte heterodascidade, com uma grande concentração em volta de 123 Oz.
 
 ### Modelo 5
+<h3>Com etnias</h3>
 ```{r}
 par(mfrow = c(2, 2))
 plot(fit_weight_5)
 ```
 
 ### Modelo 6
+<h3>sem `Weeks`</h3>
 ```{r}
 par(mfrow = c(2, 2))
 plot(fit_weight_6)
 ```
 
 ### Modelo 7
+<h3>Sem `Plural`</h3>
 ```{r}
 par(mfrow = c(2, 2))
 plot(fit_weight_7)
