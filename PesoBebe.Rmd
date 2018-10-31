@@ -110,22 +110,38 @@ Da mesma forma que no modelo 1, vejamos com o que se parece um modelo com "tudo"
 - Low
 
 Além disso, os 40 casos de ganho de peso ausentes precisam ser avaliados para uma tomada de decisão.
-```{r}
+```{r modelo 1}
 # ncb_weight_noNAs = complete.cases(ncb_weight)
 
 fit_weight_1 = lm(BirthWeightOz ~ ., data=ncb_weight, na.action = na.omit)
 ``` 
 
 ### Omitindo valores ausentes
-```{r Sem NAs}
-summary(fit_weight_1)
+```{r Sumário do modelo 1 Sem NAs, echo=FALSE}
+sf1 = summary(fit_weight_1)
+sf1
 
 ``` 
+
 ### Tomando os valores ausentes como a média
-```{r Com NAs remendados}
-summary(lm(BirthWeightOz ~ ., data=ncb_weigh_patchedNA, na.action = na.omit))
+```{r Sumário do modelo 1 com NAs remendados, echo=FALSE}
+sf1.1 = summary(lm(BirthWeightOz ~ ., data=ncb_weigh_patchedNA, na.action = na.omit))
+sf1.1
+```
+
+As diferenças entre os coeficientes não são estatisticamente significantes:
+
+```{r}
+source("NormalCompara.R")
+
+for (name in rownames(sf1$coefficients)) {
+  c1 = sf1$coefficients
+  c2 = sf1.1$coefficients
+  dnormalComp(c1[name, 1], c1[name, 2], c2[name, 1], c2[name, 2], main_title = name)
+}
 
 ```
+
 
 ### A mãe filipina
 
@@ -138,8 +154,8 @@ if (useEtn) {
   ncb_weight_NF = ncb_weight[ncb_weight$RaceMom != "Filipino",]
 }
 fit_weight_1b = lm(BirthWeightOz ~ ., data=ncb_weight_NF, na.action = na.omit)
-summary(fit_weight_1b)
-
+sf1b = summary(fit_weight_1b)
+sf1b
 ```
 
 
