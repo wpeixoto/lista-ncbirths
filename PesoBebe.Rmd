@@ -87,6 +87,19 @@ ncb_weigh_patchedNA[is.na(ncb_weigh_patchedNA$Smoke), "Smoke"] = "N"
 nc_births$somaNulos <- NULL
 ```
 
+# Análise descritiva dos dados
+
+## Correlação entre colunas
+```{r}
+alias(lm(BirthWeightOz ~ . - BirthWeightGm, data = new_ncbirths(NCbirths)))
+alias(lm(BirthWeightOz ~ . - BirthWeightGm, data = new_ncbirths(NCbirths, T)))
+
+```
+
+A sobreposição de informações dadas nas colunas étnicas aparece no relatório criado pela função `alias()`. Isso pôde ser corrigido ao se unificar as informações em uma única coluna.
+
+Curiosamente, há combinações inesperadas ali, como mães negras oriundas de Porto Rico e da América do Sul sendo consideradas também hispânicas. Por outro lado, distinguir índios de continentes distintos parece compreensível.
+
 # Modelos lineares  {.tabset .tabset-fade .tabset-pills} 
 
 ## Modelo 3: Naïve
@@ -114,7 +127,9 @@ summary(lm(BirthWeightOz ~ ., data=ncb_weigh_patchedNA, na.action = na.omit))
 
 ```
 
-Chama a atenção o coeficiente para `RaceMomFilipino`, com valor absoluto elevado e com significância de 0.055637, perto do limite escolhido para $\alpha$. Existe exatamente 1 registro de mãe com essa etnia.
+### A mãe filipina
+
+Chama a atenção o coeficiente para  <!-- `RaceMomFilipino` --> `Etnicidadefilipino`, com valor absoluto elevado e com significância de <s>0.055637</s> 0.074320 (0.076736 no modelo que inclui as linhas com valores ausentes), perto do limite escolhido para $\alpha$. Existe exatamente 1 registro de mãe com essa etnia.
 
 ```{r Modelo sem a mãe filipina}
 if (useEtn) {
@@ -126,6 +141,8 @@ fit_weight_1b = lm(BirthWeightOz ~ ., data=ncb_weight_NF, na.action = na.omit)
 summary(fit_weight_1b)
 
 ```
+
+
 ### Análise de inflação
 
 ```{r inflação modelo 3}
@@ -138,6 +155,7 @@ vif(fit_weight_1)
 vif(fit_weight_1b)
 ```
 
+As colunas `Weeks` e `Premie` são as que mais inflacionam a variância desse modelo.
 
 ## Modelo 4: significativas
 
