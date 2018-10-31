@@ -16,9 +16,13 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 
 cssTODO = 'style="text-decoration:underline; background:green"'
+subtitle = function(text) {
+  # return(paste('<p style="font-size:x-large">', text, '</p>'))
+  return(paste('<h3>', text, '</h3>'))
+}
 ```
 
-# Análise do peso do bebê
+<!-- # Análise do peso do bebê -->
 
 Exercício de Métodos Inferenciais Avançados 2/18
 
@@ -41,17 +45,20 @@ NCBnoNAs = nc_births[complete.cases(nc_births),]
 
 ```
 
+Há `r nrow(NCB_NAs)` observações com alguma informação faltando e `r nrow(NCBnoNAs)` casos completos.
+
 ```{r Fatorizar o data frame, echo=FALSE}
 # Fatorizar o que der
 source("factorize.R")
 
-useEtn = TRUE
+useEtn = TRUE  # Flag para unificar campos étnicos
 
 nc_births = NCB_noId(nc_births)
 nc_births = NCB_factorize(nc_births, useEtn)
 
-ncb_births_noGainedNA = nc_births[!is.na(nc_births$Gained), ]
-ncb_births_noGainedNA = ncb_births_noGainedNA[ncb_births_noGainedNA$somaNulos == 0, ]
+#ncb_births_noGainedNA = nc_births[!is.na(nc_births$Gained), ]
+# ncb_births_noNAsAtAll = nc_births[ncb_births_noGainedNA$somaNulos == 0, ]
+ncb_births_noNAsAtAll = nc_births[nc_births$somaNulos == 0, ]
 
 if (useEtn) {
   COLS_W = c("Plural", "Sex",    "MomAge", "Weeks",  "Marital",
@@ -62,16 +69,27 @@ if (useEtn) {
            "BirthWeightOz", "Premie", "MomRace")
 }
 ncb_weight = nc_births[, COLS_W]
-ncb_weight_noNAs = ncb_births_noGainedNA[, COLS_W]
+# ncb_weight_noNAs = ncb_births_noGainedNA[, COLS_W]  # ncb_births_noNAsAtAll
+ncb_weight_noNAs = ncb_births_noNAsAtAll[, COLS_W]  # 
+
+ncb_weigh_patchedNA = ncb_weight
+# ncb_weigh_patchedNA[ncb_weigh_patchedNA$somaNulos >0, "Gained"] = mean(ncb_weigh_patchedNA$Gained, na.rm = T)
+
+ncb_weigh_patchedNA[is.na(ncb_weigh_patchedNA$Gained), "Gained"] = mean(ncb_weigh_patchedNA$Gained, na.rm = T)
+ncb_weigh_patchedNA[is.na(ncb_weigh_patchedNA$Smoke), "Smoke"] = "N"
+
+# $Gained[is.na(ncb_weight$Gained)] = mean(ncb_weight$Gained)
+
+
 
 # Remover coluna desnecessária
-ncb_births_noGainedNA$somaNulos <- NULL
+# ncb_births_noGainedNA$somaNulos <- NULL
 nc_births$somaNulos <- NULL
 ```
 
-### Peso do bebê  {.tabset .tabset-fade .tabset-pills} 
+# Modelos lineares  {.tabset .tabset-fade .tabset-pills} 
 
-#### Modelo 3: Naïve
+## Modelo 3: Naïve
 
 Da mesma forma que no modelo 1, vejamos com o que se parece um modelo com "tudo" dentro. Entretanto, como há campos com forte correlação entre si e com a variável dependente, precisamos nos livrar antes de:
 
@@ -83,8 +101,16 @@ Além disso, os 40 casos de ganho de peso ausentes precisam ser avaliados para u
 # ncb_weight_noNAs = complete.cases(ncb_weight)
 
 fit_weight_1 = lm(BirthWeightOz ~ ., data=ncb_weight, na.action = na.omit)
+``` 
+
+### Omitindo valores ausentes
+```{r Sem NAs}
 summary(fit_weight_1)
 
+``` 
+### Tomando os valores ausentes como a média
+```{r Com NAs remendados}
+summary(lm(BirthWeightOz ~ ., data=ncb_weigh_patchedNA, na.action = na.omit))
 
 ```
 
@@ -100,7 +126,7 @@ fit_weight_1b = lm(BirthWeightOz ~ ., data=ncb_weight_NF, na.action = na.omit)
 summary(fit_weight_1b)
 
 ```
-##### Análise de inflação
+### Análise de inflação
 
 ```{r inflação modelo 3}
 library(car)
@@ -109,11 +135,13 @@ vif(fit_weight_1)
 ```
 
 ```{r inflação modelo 3b}
-
+vif(fit_weight_1b)
 ```
 
 
-#### Modelo 4: Menos é mais de novo
+## Modelo 4: significativas
+
+<p style="font-size:x-large">Menos é mais de novo</p>
 Baseado no contexto e nos valores observados das significâncias dos coeficientes do modelo 3, seleciono um conjunto menor de colunas para comparar...
 
 - Há estudos confirmando que o tabagismo introduz riscos para a gravidez. Um deles é o nascimento de bebês com menor peso.
@@ -137,7 +165,9 @@ anova(fit_weight_1, fit_weight_2)
 anova(fit_weight_1b, fit_weight_2b)
 ```
 
-#### Modelo 5: Dá pra colocar algo de volta?
+## Modelo 5: Etnias
+
+`r subtitle("Dá pra colocar algo de volta?")`
 
 ```{r}
 if (useEtn) {
@@ -160,11 +190,11 @@ if (useEtn) {
 
 A inclusão dos campos étnicos prejudicou o modelo, pois os erros cresceram ou ficaram confusos (p>0.05).
 
-#### Modelo 6: Uma variável explica mais
+## Modelo 6: Tempo em separado
 
 TODO: Comparar modelo só com `Weeks` com outro sem.
 
-## Verificação de premissas do modelo linear
+# Verificação de premissas do modelo linear
 
 <span id="comm_c" class="comando">c.	Verifique as premissas do modelo linear.</span>
 
@@ -174,14 +204,14 @@ TODO: Comparar modelo só com `Weeks` com outro sem.
   - Homocedasticidade (variância constante)
   - Linearidade
 
-### Peso do bebê Modelo 3: Naïve {.tabset .tabset-fade } 
+## Peso do bebê Modelo 3: Naïve {.tabset .tabset-fade } 
 
-#### Com a mãe filipina
+### Com a mãe filipina
 ```{r}
 plot(fit_weight_1)
 ```
 
-#### Sem a  filipina
+### Sem a  filipina
 ```{r}
 plot(fit_weight_1b)
 ```
@@ -189,13 +219,13 @@ plot(fit_weight_1b)
 
 O gráfico de resíduos x valores ajustados apresenta uma forte heterodascidade, com uma grande concentração em volta de 123 Oz.
 
-#### Revisão "b"
+### Revisão "b"
 ```{r}
 plot(fit_weight_1b)
 ```
 
 
-## Propostas
+# Propostas
 
 <span class="comando">d. Proposta de modelo</span>
 
@@ -239,6 +269,6 @@ predict(fit_weight_2, underage_premie)
 ```
 
 
-## ENTREGA EM 31/10/2018, ÀS 23h59.
+#ENTREGA EM 31/10/2018, ÀS 23h59.
 
 
