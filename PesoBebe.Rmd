@@ -399,15 +399,80 @@ comparaCoeficientes(summary(fit_weight_7), sf1)  # , sf2, sf6)
   - Homocedasticidade (variância constante)
   - Linearidade
 
+## Sumário
+```{r}
+modelss = list(
+ fit_weight_1,
+ fit_weight_1b,
+ fit_weight_2,
+ fit_weight_2b,
+ fit_weight_5,
+ fit_weight_6,
+ fit_weight_7,
+ fit_weight_W 
+)
+
+
+
+models.residuals = list(
+ fit_weight_1$residuals,
+ fit_weight_1b$residuals,
+ fit_weight_2$residuals,
+ fit_weight_2b$residuals,
+ fit_weight_5$residuals,
+ fit_weight_6$residuals,
+ fit_weight_7$residuals,
+ fit_weight_W$residuals 
+)
+
+names(models.residuals) = c(
+ "fit_weight_1",
+ "fit_weight_1b",
+ "fit_weight_2",
+ "fit_weight_2b",
+ "fit_weight_5",
+ "fit_weight_6",
+ "fit_weight_7",
+ "fit_weight_W"  
+)
+
+N = length(models.residuals)
+sw = data.frame(
+  name = character(),
+  W = numeric(),
+  p.value = numeric(),
+  # name = character(N),
+  # W = numeric(N),
+  # p.value = numeric(N)
+  stringsAsFactors = F
+)
+
+n = 1
+nn = names(models.residuals)[2]
+for (nn in names(models.residuals)) {
+  print(nn)
+  print(shapiro.test(models.residuals[[nn]]))
+  # tt = shapiro.test(models.residuals[[nn]])
+  # sw = rbind(sw, list(
+  #   name = as.character(nn),
+  #   W = as.numeric(tt[1]),
+  #   p.value = as.numeric(tt[2])
+  # ))
+}
+```
+
+
 ## Peso do bebê Modelo 3: Naïve {.tabset .tabset-fade } 
 
 ### Com a mãe filipina
 ```{r}
+par(mfrow = c(2, 2))
 plot(fit_weight_1)
 ```
 
 ### Sem a  filipina
 ```{r}
+par(mfrow = c(2, 2))
 plot(fit_weight_1b)
 ```
 
@@ -416,12 +481,20 @@ O gráfico de resíduos x valores ajustados apresenta uma forte heterodascidade,
 
 ### Modelo 5
 ```{r}
+par(mfrow = c(2, 2))
 plot(fit_weight_5)
 ```
 
 ### Modelo 6
 ```{r}
+par(mfrow = c(2, 2))
 plot(fit_weight_6)
+```
+
+### Modelo 7
+```{r}
+par(mfrow = c(2, 2))
+plot(fit_weight_7)
 ```
 
 
