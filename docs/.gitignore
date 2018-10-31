@@ -1,2 +1,2 @@
 upd.sh
-"*.html
+!*.html
