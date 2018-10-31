@@ -16,9 +16,13 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 
 cssTODO = 'style="text-decoration:underline; background:green"'
+subtitle = function(text) {
+  # return(paste('<p style="font-size:x-large">', text, '</p>'))
+  return(paste('<h3>', text, '</h3>'))
+}
 ```
 
-# Análise do peso do bebê
+<!-- # Análise do peso do bebê -->
 
 Exercício de Métodos Inferenciais Avançados 2/18
 
@@ -41,30 +45,66 @@ NCBnoNAs = nc_births[complete.cases(nc_births),]
 
 ```
 
+Há `r nrow(NCB_NAs)` observações com alguma informação faltando e `r nrow(NCBnoNAs)` casos completos.
+
 ```{r Fatorizar o data frame, echo=FALSE}
 # Fatorizar o que der
 source("factorize.R")
 
+useEtn = TRUE  # Flag para unificar campos étnicos
+
 nc_births = NCB_noId(nc_births)
-nc_births = NCB_factorize(nc_births)
+nc_births = NCB_factorize(nc_births, useEtn)
 
-ncb_births_noGainedNA = nc_births[!is.na(nc_births$Gained), ]
-ncb_births_noGainedNA = ncb_births_noGainedNA[ncb_births_noGainedNA$somaNulos == 0, ]
+#ncb_births_noGainedNA = nc_births[!is.na(nc_births$Gained), ]
+# ncb_births_noNAsAtAll = nc_births[ncb_births_noGainedNA$somaNulos == 0, ]
+ncb_births_noNAsAtAll = nc_births[nc_births$somaNulos == 0, ]
 
-COLS_W = c("Plural", "Sex",    "MomAge", "Weeks",  "Marital",
+if (useEtn) {
+  COLS_W = c("Plural", "Sex",    "MomAge", "Weeks",  "Marital",
+           "Gained", "Smoke", "BirthWeightOz", "Premie", "Etnicidade")
+} else {
+  COLS_W = c("Plural", "Sex",    "MomAge", "Weeks",  "Marital",
            "RaceMom",  "HispMom", "Gained", "Smoke",
            "BirthWeightOz", "Premie", "MomRace")
+}
 ncb_weight = nc_births[, COLS_W]
-ncb_weight_noNAs = ncb_births_noGainedNA[, COLS_W]
+# ncb_weight_noNAs = ncb_births_noGainedNA[, COLS_W]  # ncb_births_noNAsAtAll
+ncb_weight_noNAs = ncb_births_noNAsAtAll[, COLS_W]  # 
+
+ncb_weigh_patchedNA = ncb_weight
+# ncb_weigh_patchedNA[ncb_weigh_patchedNA$somaNulos >0, "Gained"] = mean(ncb_weigh_patchedNA$Gained, na.rm = T)
+
+ncb_weigh_patchedNA[is.na(ncb_weigh_patchedNA$Gained), "Gained"] = mean(ncb_weigh_patchedNA$Gained, na.rm = T)
+ncb_weigh_patchedNA[is.na(ncb_weigh_patchedNA$Smoke), "Smoke"] = "N"
+
+# $Gained[is.na(ncb_weight$Gained)] = mean(ncb_weight$Gained)
+
+
 
 # Remover coluna desnecessária
-ncb_births_noGainedNA$somaNulos <- NULL
+# ncb_births_noGainedNA$somaNulos <- NULL
 nc_births$somaNulos <- NULL
 ```
 
-### Peso do bebê  {.tabset .tabset-fade .tabset-pills} 
+# Análise descritiva dos dados
 
-#### Modelo 3: Naïve
+## Correlação entre colunas
+```{r}
+alias(lm(BirthWeightOz ~ . - BirthWeightGm, data = new_ncbirths(NCbirths)))
+alias(lm(BirthWeightOz ~ . - BirthWeightGm, data = new_ncbirths(NCbirths, T)))
+
+```
+
+A sobreposição de informações dadas nas colunas étnicas aparece no relatório criado pela função `alias()`. Isso pôde ser corrigido ao se unificar as informações em uma única coluna.
+
+Curiosamente, há combinações inesperadas ali, como mães negras oriundas de Porto Rico e da América do Sul sendo consideradas também hispânicas. Por outro lado, distinguir índios de continentes distintos parece compreensível.
+
+# Modelos lineares  {.tabset .tabset-fade }
+
+<!-- .tabset-pills}  -->
+
+## Modelo 3: Naïve
 
 Da mesma forma que no modelo 1, vejamos com o que se parece um modelo com "tudo" dentro. Entretanto, como há campos com forte correlação entre si e com a variável dependente, precisamos nos livrar antes de:
 
@@ -72,40 +112,120 @@ Da mesma forma que no modelo 1, vejamos com o que se parece um modelo com "tudo"
 - Low
 
 Além disso, os 40 casos de ganho de peso ausentes precisam ser avaliados para uma tomada de decisão.
-```{r}
-
-
+```{r modelo 3}
 # ncb_weight_noNAs = complete.cases(ncb_weight)
 
+# fit_weight_1 é o fModelo 3                                ====
 fit_weight_1 = lm(BirthWeightOz ~ ., data=ncb_weight, na.action = na.omit)
-summary(fit_weight_1)
+``` 
 
+### Omitindo valores ausentes
+```{r Sumário do modelo 3 Sem NAs, echo=FALSE}
+sf1 = summary(fit_weight_1)
+sf1
 
+``` 
+
+### Tomando os valores ausentes como a média
+```{r Sumário do modelo 3 com NAs remendados, echo=FALSE}
+sf1.1 = summary(lm(BirthWeightOz ~ ., data=ncb_weigh_patchedNA, na.action = na.omit))
+sf1.1
 ```
 
-Chama a atenção o coeficiente para `RaceMomFilipino`, com valor absoluto elevado e com significância de 0.055637, perto do limite escolhido para $\alpha$. Existe exatamente 1 registro de mãe com essa etnia.
 
+```{r include=FALSE}
+source("NormalCompara.R")
+
+comparaCoeficientes <- function(sf1, sf2, title="") {
+  
+  par(mfrow = c(2, 2))  # , mar=c(2.5,2.5,1,1))
+  # par(mar=c(2.5,2.5,1,1))  # figura margins too large
+  # par(mar=c(1,1,1,1))
+  # layout(matrix(1:30,ncol=3),heights=2)   # c(1,3,1,3))
+  # plot.new()
+  # mtext(title)  # , line = 1)
+  for (name in rownames(sf1$coefficients)) {
+    c1 = sf1$coefficients
+    c2 = sf2$coefficients
+    dnormalComp(c1[name, 1], c1[name, 2], c2[name, 1], c2[name, 2], main_title = name)
+  }
+
+  par(mfrow = c(1, 1))
+}
+
+```
+#### Coeficientes com e sem linhas incompletas
+As diferenças entre os coeficientes não são estatisticamente significantes:
 ```{r}
-ncb_weight_NF = ncb_weight[ncb_weight$RaceMom != "Filipino",]
-fit_weight_1b = lm(BirthWeightOz ~ ., data=ncb_weight_NF, na.action = na.omit)
-summary(fit_weight_1b)
-
+comparaCoeficientes(sf1, sf1.1, "Coeficientes com e sem linhas incompletas")
 ```
 
 
-#### Modelo 4: Menos é mais de novo
-Baseado no contexto e nos valores observados das significâncias dos coeficientes do modelo 3, seleciono um conjunto menor de colunas para comparar...
+### A mãe filipina
+
+Chama a atenção o coeficiente para  <!-- `RaceMomFilipino` --> `Etnicidadefilipino`, com valor absoluto elevado e com significância de <s>0.055637</s> 0.074320 (0.076736 no modelo que inclui as linhas com valores ausentes), perto do limite escolhido para $\alpha$. Existe exatamente 1 registro de mãe com essa etnia.
+
+```{r Modelo sem a mãe filipina}
+if (useEtn) {
+  ncb_weight_NF = ncb_weight[ncb_weight$Etnicidade != "filipino",]
+} else {
+  ncb_weight_NF = ncb_weight[ncb_weight$RaceMom != "Filipino",]
+}
+fit_weight_1b = lm(BirthWeightOz ~ ., data=ncb_weight_NF, na.action = na.omit)
+sf1b = summary(fit_weight_1b)
+sf1b
+
+comparaCoeficientes(sf1b, sf1)
+```
+
+
+### Análise de inflação
+
+```{r library car, include=FALSE}
+library(car)
+```
+
+```{r inflação modelo 3}
+vif(fit_weight_1)
+
+```
+
+```{r inflação modelo 3b}
+vif(fit_weight_1b)
+```
+
+As colunas `Weeks` e `Premie` são as que mais inflacionam a variância desse modelo. A retirada da mãe filipina diminuiu levemente a inflação do campo Etnicidade.
+
+[Outros modelos](#modelos-lineares)  [Topo](#analise-descritiva-dos-dados)
+
+## Modelo 4: significativas
+
+<p style="font-size:x-large">Menos é mais (de novo)</p>
+Baseado no contexto e nos valores observados das significâncias dos coeficientes do modelo 3, seleciono um conjunto menor de colunas para incluir no modelo.
+
+### Contexto
+
+- Há estudos confirmando que o tabagismo introduz riscos para a gravidez. Um deles é o nascimento de bebês com menor peso.
+- Getação múltipla é considerada de alto risco, com maior índice de partos prematuros e consequente peso menor ao nascer.
+- O índice de massa corporal da gestante, segundo um estudo realizado pelo Cincinnati Children’s Hospital Medical Center do estado de Ohio, nos Estados Unidos, pode estar ligado a 25% dos nascimentos prematuros.
+
+### Modelo
 ```{r}
 #COLSET_01 = c("Plural", "Sex",    "MomAge", "Weeks", 
 #              "Gained", "Smoke",
 #              "BirthWeightOz")
 
-fit_weight_2 = lm(BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke,
-                  data = ncb_weight)
+# fit_weight_2 é o fModelo 4                                ====
+fit_weight_2 = lm(
+  BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke,
+  data = ncb_weight
+  )
 summary(fit_weight_2)
 
-fit_weight_2b = lm(BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke,
-                  data = ncb_weight_NF)
+fit_weight_2b = lm(
+  BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke,
+  data = ncb_weight_NF)
+
 summary(fit_weight_2b)
 
 anova(fit_weight_1, fit_weight_2)
@@ -113,24 +233,163 @@ anova(fit_weight_1, fit_weight_2)
 anova(fit_weight_1b, fit_weight_2b)
 ```
 
-#### Modelo 5: Dá pra colocar algo de volta?
+Inesperadamente, o a soma dos quadrados dos resíduos aumentou quando as outras variáveis foram retiradas.
 
+[Outros modelos](#modelos-lineares)  [Topo](#analise-descritiva-dos-dados)
+
+## Modelo 5: Etnias
+
+`r subtitle("Dá pra colocar algo de volta?")`
+
+`r if(useEtn) {print("Os três campos de etnicidade foram reunidos em um só.")}`
+
+```{r Modelo com etnias}
+# fit_weight_5 é o fModelo 5                                ====
+if (useEtn) {
+  fit_weight_5 = lm(
+    BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke + Etnicidade,
+    data=ncb_weight)
+  
+  sf5 = summary(fit_weight_5)
+  print(sf5)
+  
+  anova(fit_weight_1, fit_weight_2, fit_weight_5) 
+  
+} else {
+  fit_weight_5 = lm(
+    BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke + RaceMom, 
+    data = ncb_weight)
+  sf5 = summary(fit_weight_5)
+  print(sf5)
+  
+# fit_weight_5{b,c} são variações do fModelo 3                                ====
+  fit_weight_5b = lm(
+    BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke + MomRace, 
+    data = ncb_weight)
+  summary(fit_weight_5b)
+  
+  fit_weight_5c = lm(
+    BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke + HispMom, 
+    data = ncb_weight)
+  summary(fit_weight_5c)
+  anova(fit_weight_1, fit_weight_2, fit_weight_5, fit_weight_5b, fit_weight_5c)
+}
+```
+
+### Coeficientes: Modelo 5 x Modelo 3
 ```{r}
-fit_weight_5 = lm(BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke + RaceMom, data = ncb_weight)
-summary(fit_weight_5)
-
-fit_weight_5b = lm(BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke + MomRace, data = ncb_weight)
-summary(fit_weight_5b)
-
-fit_weight_5c = lm(BirthWeightOz ~ Plural + Sex + MomAge + Weeks + Gained + Smoke + HispMom, data = ncb_weight)
-summary(fit_weight_5c)
-
-anova(fit_weight_1, fit_weight_2, fit_weight_5, fit_weight_5b, fit_weight_5c)
+comparaCoeficientes(summary(fit_weight_5), sf1)
 ```
 
 A inclusão dos campos étnicos prejudicou o modelo, pois os erros cresceram ou ficaram confusos (p>0.05).
 
-## Verificação de premissas do modelo linear
+Houve diferença significativa entre os coeficientes do intercepto e do campo `Weeks` (mas não sei por que)
+
+
+
+
+
+[Outros modelos](#modelos-lineares)  [Topo](#analise-descritiva-dos-dados)
+
+## Modelo 6: Tempo em separado
+
+O [modelo 5](#modelo-5-etnias) chamou atenção para o campo `Weeks`. Pelo contexto, espera-se uma forte correlação entre o peso do nascituro e a idade gestacional do parto: quanto mais próximo do termo, maior o peso (o que acontece depois do termo?).
+
+Esta seção tenta isolar a influência desse campo no modelo.
+```{r modelo linear simples}
+# fit_weight_W é um modelo linear simples para comparar com o fModelo 6   ====
+fit_weight_W = lm(BirthWeightOz ~ Weeks, data=ncb_weight)
+sfW = summary(fit_weight_W)
+print(sfW)
+
+```
+
+Um modelo que tem apenas o campo `Weeks`  como preditor de `BirthWeighOz` explica pouco mais de `35%` da variância. É bastante, comparado com o modelo 3, com todas as variáveis, que explica `r sf1$r.squared * 100`%
+
+```{r}
+# anova(fit_weight_1, fit_weight_W, fit_weight_2)
+print("Cadê o noNA?")
+```
+
+
+```{r Modelo sem o campo Weeks}
+
+if (useEtn) {  # Campo "etnicidade" unificado no modelo 6     ====
+  fit_weight_6 = lm(BirthWeightOz ~ Plural + Sex + MomAge + Gained + Smoke + Etnicidade, data=ncb_weight)
+  sf6 = summary(fit_weight_6)
+  print(sf6)
+  
+  anova(fit_weight_1, fit_weight_6) # compara variância de "1" com "6" 
+  
+} else {  # Campos étnicos separados (como no original) no modelo 6 ====
+  fit_weight_6 = lm(BirthWeightOz ~ Plural + Sex + MomAge + Gained + Smoke + RaceMom, data = ncb_weight)
+  sf6 = summary(fit_weight_6)
+  print(sf6)
+  
+  fit_weight_6b = lm(BirthWeightOz ~ Plural + Sex + MomAge + Gained + Smoke + MomRace, data = ncb_weight)
+  sf6b = summary(fit_weight_6b)
+  print(sf6b)
+  
+  fit_weight_6c = lm(BirthWeightOz ~ Plural + Sex + MomAge + Gained + Smoke + HispMom, data = ncb_weight)
+  sf6c = summary(fit_weight_6c)
+  print(sf6c)
+  
+  anova(fit_weight_1, fit_weight_2, fit_weight_6, fit_weight_6b, fit_weight_6c)
+}
+```
+
+### Coeficientes do model 6 x os do modelo 3
+```{r}
+comparaCoeficientes(summary(fit_weight_6), sf1)
+```
+
+
+
+[Outros modelos](#modelos-lineares)  [Topo](#analise-descritiva-dos-dados)
+
+
+## Modelo 7: sem gêmeos
+
+Uma informação ausente sobre o peso do nascituro é: de qual bebê é o peso informado em `BirthWeightOz`? É a média dos dois ou três? É o menor (ou maior) deles? Essa falta de informação pode estar introduzindo alguma distorção no modelo. Façamos um sem gêmeos.
+
+```{r sem gêmeos}
+# fit_weight_7 é o fModelo 7 (sem gêmeos)                              ========
+if (useEtn) {  # Campo "etnicidade" unificado no modelo 7    
+  fit_weight_7 = lm(
+    BirthWeightOz ~ Sex + MomAge + Gained + Smoke + Etnicidade,
+    data=ncb_weight)
+  sf7 = summary(fit_weight_7)
+  print(sf7)
+  
+  anova(fit_weight_1, fit_weight_7, fit_weight_2) # compara variância de "1" com "2" e "7"   =====
+  
+} else {  # Campos étnicos separados (como no original) no modelo 7 =======
+  fit_weight_7 = lm(BirthWeightOz ~ Sex + MomAge + Gained + Smoke + RaceMom, data = ncb_weight)
+  sf7 = summary(fit_weight_7)
+  print(sf7)
+  
+  fit_weight_7b = lm(BirthWeightOz ~ Sex + MomAge + Gained + Smoke + MomRace, data = ncb_weight)
+  sf7b = summary(fit_weight_7b)
+  print(sf7b)
+  
+  fit_weight_7c = lm(BirthWeightOz ~ Sex + MomAge + Gained + Smoke + HispMom, data = ncb_weight)
+  sf7c = summary(fit_weight_7c)
+  print(sf7c)
+  
+  anova(fit_weight_1, fit_weight_2, fit_weight_7, fit_weight_7b, fit_weight_7c)
+}
+```
+
+### Compara coeficientes do modelo 7 com os do 3
+```{r compara coeficientes 7 vs 3}
+comparaCoeficientes(summary(fit_weight_7), sf1)  # , sf2, sf6)
+```
+
+
+[Outros modelos](#modelos-lineares)  [Topo](#analise-descritiva-dos-dados)
+
+
+# Verificação de premissas do modelo linear
 
 <span id="comm_c" class="comando">c.	Verifique as premissas do modelo linear.</span>
 
@@ -140,23 +399,129 @@ A inclusão dos campos étnicos prejudicou o modelo, pois os erros cresceram ou 
   - Homocedasticidade (variância constante)
   - Linearidade
 
-### Peso do bebê Modelo 3: Naïve
+## Sumário
+
+### Normalidade
+```{r}
+library(knitr)
+modelss = list(
+ fit_weight_1,
+ fit_weight_1b,
+ fit_weight_2,
+ fit_weight_2b,
+ fit_weight_5,
+ fit_weight_6,
+ fit_weight_7,
+ fit_weight_W 
+)
+
+
+
+models.residuals = list(
+ fit_weight_1$residuals,
+ fit_weight_1b$residuals,
+ fit_weight_2$residuals,
+ fit_weight_2b$residuals,
+ fit_weight_5$residuals,
+ fit_weight_6$residuals,
+ fit_weight_7$residuals,
+ fit_weight_W$residuals 
+)
+
+models.names = c(
+ "fit_weight_1",
+ "fit_weight_1b",
+ "fit_weight_2",
+ "fit_weight_2b",
+ "fit_weight_5",
+ "fit_weight_6",
+ "fit_weight_7",
+ "fit_weight_W"  
+)
+names(models.residuals) = models.names
+
+N = length(models.residuals)
+sw = data.frame(
+  name = character(),
+  # name = factor(levels = models.names),
+  W = numeric(),
+  p.value = numeric(),
+  # name = character(N),
+  # W = numeric(N),
+  # p.value = numeric(N)
+  stringsAsFactors = F
+)
+
+n = 1
+nn = names(models.residuals)[2]
+for (nn in names(models.residuals)) {
+  # print(nn)
+  # print(shapiro.test(models.residuals[[nn]]))
+  tt = shapiro.test(models.residuals[[nn]])
+  sw = rbind(sw, data.frame(
+    name = as.character(nn),
+    W = as.numeric(tt[1]),
+    p.value = as.numeric(tt[2])
+  ))
+}
+
+kable(sw)
+
+```
+
+Os resíduos dos modelos 6 e 7 tem sua estatística W abaixo de 96%. Todos os outros ficara acima de 99%. Seus gráficos Q-Q apresentam deformidades que levantam suspeitas de que não sejam ~N.
 
 ```{r}
+# for (m in modelss) {
+  # qqnorm(m)
+# }
+```
+
+
+## Modelos {.tabset .tabset-fade } 
+
+Peso do bebê
+
+###  Modelo 3: Naïve {.tabset .tabset-fade } 
+
+#### Com a mãe filipina
+```{r}
+par(mfrow = c(2, 2))
 plot(fit_weight_1)
+```
+
+#### Sem a  filipina
+```{r}
+par(mfrow = c(2, 2))
 plot(fit_weight_1b)
 ```
 
 
 O gráfico de resíduos x valores ajustados apresenta uma forte heterodascidade, com uma grande concentração em volta de 123 Oz.
 
-#### Revisão "b"
+### Modelo 5
+<h3>Com etnias</h3>
 ```{r}
-plot(fit_weight_1b)
+par(mfrow = c(2, 2))
+plot(fit_weight_5)
+```
+
+### Modelo 6
+<h3>sem `Weeks`</h3>
+```{r}
+par(mfrow = c(2, 2))
+plot(fit_weight_6)
+```
+
+### Modelo 7
+<h3>Sem `Plural`</h3>
+```{r}
+par(mfrow = c(2, 2))
+plot(fit_weight_7)
 ```
 
 
-## Propostas
+# Propostas
 
 <span class="comando">d. Proposta de modelo</span>
 
@@ -176,11 +541,30 @@ e. <span class="comando">Utilize o(s) modelo(s) proposto(s) para fazer pelo meno
 ```{r}
 # bloco de código - item e
 
+weeks = c(10,  # Poucas chances de sobrevivência
+          11,
+          23,  # 17% de sobrevivência
+          25,
+          39,  # termo
+          39.5,
+          40.2,
+          44,
+          45,
+          46,  # risco 
+          47)
 
+gained = c(0.5, 11.3, 43.8, 100, 110)
 
+age = c(4, 6, 8, 10, 12, 14,  # Abaixo 
+        21.5, 29.3,           # no meio
+        44, 45, 46, 60)       # acima
+
+underage_premie = list(Plural="Single", MomAge=10, Sex="M", Weeks=20, Gained=5, Smoke="N")
+
+predict(fit_weight_2, underage_premie)
 ```
 
 
-## ENTREGA EM 31/10/2018, ÀS 23h59.
+#ENTREGA EM 31/10/2018, ÀS 23h59.
 
 
