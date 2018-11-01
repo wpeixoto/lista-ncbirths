@@ -405,10 +405,9 @@ summary(lm(BirthWeightOz ~ ., data=ncb_weight, na.action = na.omit))
 
 ## Tempo de gestação
 
-TODO: Modelos
-```{r}
+<div style="background-color:red; color:white"><br>
+Não foi feito<br></div>
 
-```
 
 
 # Verificação de premissas do modelo linear
@@ -479,13 +478,17 @@ par(mfrow=c(1,1))
 
 ```
 
-TODO: Interpretação (nada se destaca aí)
+TODO: Interpretação 
 
 ## Modelo 3: Peso do bebê
 
 O gráfico de resíduos x valores ajustados apresenta uma forte heterodascidade, com uma grande concentração em volta de 123 Oz.
 
 ### Modelo X: Duração da gravidez
+
+NADA POR AQUI
+
+<hr>
 
 # Propostas
 
