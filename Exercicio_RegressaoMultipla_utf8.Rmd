@@ -306,12 +306,36 @@ Segundo a [documentação](NCbirths.html) do DataSet, várias dessas colunas pod
 ```{r Fatorizar o data frame}
 # Fatorizar o que der
 source("factorize.R")
+useEtn = TRUE  # Flag para unificar campos étnicos
 
 nc_births = NCB_noId(nc_births)
-nc_births = NCB_factorize(nc_births)
+nc_births = NCB_factorize(nc_births, useEtn)
 
 ncb_births_noGainedNA = nc_births[!is.na(nc_births$Gained), ]
 ncb_births_noGainedNA = ncb_births_noGainedNA[ncb_births_noGainedNA$somaNulos == 0, ]
+
+ncb_births_noNAsAtAll = nc_births[nc_births$somaNulos == 0, ]
+
+if (useEtn) {
+  COLS_W = c("Plural", "Sex",    "MomAge", "Weeks",  "Marital",
+           "Gained", "Smoke", "BirthWeightOz", "Premie", "Etnicidade")
+} else {
+  COLS_W = c("Plural", "Sex",    "MomAge", "Weeks",  "Marital",
+           "RaceMom",  "HispMom", "Gained", "Smoke",
+           "BirthWeightOz", "Premie", "MomRace")
+}
+ncb_weight = nc_births[, COLS_W]
+# ncb_weight_noNAs = ncb_births_noGainedNA[, COLS_W]  # ncb_births_noNAsAtAll
+ncb_weight_noNAs = ncb_births_noNAsAtAll[, COLS_W]  # 
+
+ncb_weigh_patchedNA = ncb_weight
+# ncb_weigh_patchedNA[ncb_weigh_patchedNA$somaNulos >0, "Gained"] = mean(ncb_weigh_patchedNA$Gained, na.rm = T)
+
+ncb_weigh_patchedNA[is.na(ncb_weigh_patchedNA$Gained), "Gained"] = mean(ncb_weigh_patchedNA$Gained, na.rm = T)
+ncb_weigh_patchedNA[is.na(ncb_weigh_patchedNA$Smoke), "Smoke"] = "N"
+
+# $Gained[is.na(ncb_weight$Gained)] = mean(ncb_weight$Gained)
+
 
 # Remover coluna desnecessária
 ncb_births_noGainedNA$somaNulos <- NULL
@@ -322,6 +346,17 @@ nc_births$somaNulos <- NULL
 
 # boxplot(nc_births$Gained ~ nc_births$MomRace + nc_births$RaceMom, main='Peso ganho por "Raça"') # Pouco útil sem fatores
 ```
+
+### Correlação entre colunas
+```{r}
+alias(lm(BirthWeightOz ~ . - BirthWeightGm, data = new_ncbirths(NCbirths)))
+alias(lm(BirthWeightOz ~ . - BirthWeightGm, data = new_ncbirths(NCbirths, T)))
+
+```
+
+A sobreposição de informações dadas nas colunas étnicas aparece no relatório criado pela função `alias()`. Isso pôde ser corrigido ao se unificar as informações em uma única coluna.
+
+Curiosamente, há combinações inesperadas ali, como mães negras oriundas de Porto Rico e da América do Sul sendo consideradas também hispânicas. Por outro lado, distinguir índios de continentes distintos parece compreensível.
 
 # Análises marginais e multivariadas {.tabset .tabset-fade } 
 <!--.tabset-pills} -->
@@ -389,15 +424,17 @@ Da mesma forma que no modelo 1, vejamos com o que se parece um modelo com "tudo"
 Além disso, os 40 casos de ganho de peso ausentes precisam ser avaliados para uma tomada de decisão.
 ```{r}
 
-ncb_weight = nc_births[,c("Plural", "Sex",    "MomAge", "Weeks",  "Marital",
-                         "RaceMom",  "HispMom", "Gained", "Smoke",
-                         "BirthWeightOz", "Premie", "MomRace")]
+# ncb_weight = nc_births[,c("Plural", "Sex",    "MomAge", "Weeks",  "Marital",
+#                          "RaceMom",  "HispMom", "Gained", "Smoke",
+#                          "BirthWeightOz", "Premie", "MomRace")]
+# 
+# ncb_weight_noNAs = ncb_births_noGainedNA[c("Plural", "Sex",    "MomAge", "Weeks",  "Marital",
+#                          "RaceMom",  "HispMom", "Gained", "Smoke",
+#                          "BirthWeightOz", "Premie", "MomRace"),]
 
-ncb_weight_noNAs = ncb_births_noGainedNA[c("Plural", "Sex",    "MomAge", "Weeks",  "Marital",
-                         "RaceMom",  "HispMom", "Gained", "Smoke",
-                         "BirthWeightOz", "Premie", "MomRace"),]
-
-summary(lm(BirthWeightOz ~ ., data=ncb_weight, na.action = na.omit))
+# summary(lm(BirthWeightOz ~ ., data=ncb_weight, na.action = na.omit))
+# fit_weight_1 é o fModelo 3                                ====
+fit_weight_1 = lm(BirthWeightOz ~ ., data=ncb_weight, na.action = na.omit)
 
 
 ```
