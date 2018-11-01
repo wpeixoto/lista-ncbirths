@@ -402,7 +402,7 @@ comparaCoeficientes(summary(fit_weight_7), sf1)  # , sf2, sf6)
 ## Sumário
 
 ### Normalidade
-```{r}
+```{r include=FALSE}
 library(knitr)
 modelss = list(
  fit_weight_1,

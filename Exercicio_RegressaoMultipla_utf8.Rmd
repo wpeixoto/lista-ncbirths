@@ -940,8 +940,51 @@ e. <span class="comando">Utilize o(s) modelo(s) proposto(s) para fazer pelo meno
 # bloco de código - item e
 
 
+weeks = c(10,  # Poucas chances de sobrevivência
+          11,
+          23,  # 17% de sobrevivência
+          25,
+          39,  # termo
+          39.5,
+          40.2,
+          44,
+          45,
+          46,  # risco 
+          47)
+
+gained = c(0.5, 11.3, 43.8, 100, 110)
+
+age = c(4, 6, 8, 10, 12, 14,  # Abaixo 
+        21.5, 29.3,           # no meio
+        44, 45, 46, 60)       # acima
+
+
+
+underage_premie = list(Plural="Single", MomAge=10, Sex="M", Weeks=20, Gained=5, Smoke="N")
+underage_tardie = list(Plural="Single", MomAge=10, Sex="M", Weeks=45, Gained=5, Smoke="N")
+
+up1 = predict(fit_weight_2, underage_premie)
+up2 = predict(fit_weight_2, underage_tardie)
 
 ```
+
+### Peso do bebê
+
+Quantas onças pesaria um bebê nascido nas circunstâncias:
+
+| Idade | Tempo de gestação |
+| <12   | prematuro |
+| <12   | termo |
+| <12   | tardio |
+| >40   | prematuro |
+| >40   | termo |
+| >40   | tardio |
+
+
+| Modelo | underage/premie | underage/overtime | overage/premie | overage/tardie |
+|--------|-----------------|-------------------|----------------|----------------|
+| 1      | `r up1` |`r up2`|||
+
 
 # Conclusões e comentários
 
