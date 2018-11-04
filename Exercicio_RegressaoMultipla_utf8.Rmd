@@ -525,14 +525,14 @@ As colunas `Weeks` e `Premie` são as que mais inflacionam a variância desse mo
 
 ## Modelo 4: significativas
 
-<p style="font-size:x-large">Menos é mais (de novo)</p>
+<p style="font-size:x-large">Menos é mais (de novo). Ou não.</p>
 Baseado no contexto e nos valores observados das significâncias dos coeficientes do modelo 3, seleciono um conjunto menor de colunas para incluir no modelo.
 
 ### Contexto
 
-- Há estudos confirmando que o tabagismo introduz riscos para a gravidez. Um deles é o nascimento de bebês com menor peso.
-- Getação múltipla é considerada de alto risco, com maior índice de partos prematuros e consequente peso menor ao nascer.
-- O índice de massa corporal da gestante, segundo um estudo realizado pelo Cincinnati Children’s Hospital Medical Center do estado de Ohio, nos Estados Unidos, pode estar ligado a 25% dos nascimentos prematuros.
+- Há estudos confirmando que o tabagismo introduz riscos para a gravidez. Um deles é o nascimento de bebês com menor peso (`Smoke`)
+- Getação múltipla é considerada de alto risco, com maior índice de partos prematuros e consequente peso menor ao nascer (`Plural`).
+- O índice de massa corporal da gestante, segundo um estudo realizado pelo Cincinnati Children’s Hospital Medical Center do estado de Ohio, nos Estados Unidos, pode estar ligado a 25% dos nascimentos prematuros (`Gained`).
 
 ### Modelo
 ```{r}
@@ -623,7 +623,7 @@ O [modelo 5](#modelo-5-etnias) chamou atenção para o campo `Weeks`. Pelo conte
 Esta seção tenta isolar a influência desse campo no modelo.
 ```{r modelo linear simples}
 # fit_weight_W é um modelo linear simples para comparar com o fModelo 6   ====
-fit_weight_W = lm(BirthWeightOz ~ Weeks, data=ncb_weight)
+fit_weight_W = lm(BirthWeightOz ~ Weeks, data=ncb_births_noNAsAtAll)
 sfW = summary(fit_weight_W)
 print(sfW)
 
@@ -639,8 +639,12 @@ print("Cadê o noNA?")
 
 ```{r Modelo sem o campo Weeks}
 
+fit_weight_6_X_noNAs = lm(BirthWeightOz ~ Plural + Sex + MomAge +  Gained + Smoke, data=ncb_births_noNAsAtAll)
+
 if (useEtn) {  # Campo "etnicidade" unificado no modelo 6     ====
   fit_weight_6 = lm(BirthWeightOz ~ Plural + Sex + MomAge + Gained + Smoke + Etnicidade, data=ncb_weight)
+  fit_weight_6_noNAs = lm(BirthWeightOz ~ Plural + Sex + MomAge + Gained + Smoke + Etnicidade, data=ncb_births_noNAsAtAll)
+
   sf6 = summary(fit_weight_6)
   print(sf6)
   
@@ -659,9 +663,31 @@ if (useEtn) {  # Campo "etnicidade" unificado no modelo 6     ====
   sf6c = summary(fit_weight_6c)
   print(sf6c)
   
-  anova(fit_weight_1, fit_weight_2, fit_weight_6, fit_weight_6b, fit_weight_6c)
+  anova(fit_weight_1, fit_weight_2, fit_weight_6, fit_weight_6b, fit_weight_6c, fit_weight_6_X)
 }
 ```
+```{r}
+anova(fit_weight_W, fit_weight_6_X_noNAs, fit_weight_6_noNAs, lm(BirthWeightOz ~ Gained + Smoke, data = ncb_births_noNAsAtAll))
+
+anova(
+  lm(BirthWeightOz ~ Gained + Smoke, data = ncb_births_noNAsAtAll),
+  lm(BirthWeightOz ~ Gained + MomAge, data = ncb_births_noNAsAtAll),
+  lm(BirthWeightOz ~ Gained + Plural, data = ncb_births_noNAsAtAll),
+  lm(BirthWeightOz ~ Gained + Low, data = ncb_births_noNAsAtAll),
+  lm(BirthWeightOz ~ Gained + Etnicidade, data = ncb_births_noNAsAtAll)
+      )
+```
+```{r}
+anova(
+  lm(BirthWeightOz ~ Plural + Smoke, data = ncb_births_noNAsAtAll),
+  lm(BirthWeightOz ~ Plural + MomAge, data = ncb_births_noNAsAtAll),
+  lm(BirthWeightOz ~ Plural + Gained, data = ncb_births_noNAsAtAll),
+  lm(BirthWeightOz ~ Plural + Low, data = ncb_births_noNAsAtAll),
+  lm(BirthWeightOz ~ Plural + Etnicidade, data = ncb_births_noNAsAtAll)
+      )
+
+```
+Nada foi significativo. Why?
 
 ### Coeficientes do model 6 x os do modelo 3
 ```{r}
@@ -783,24 +809,30 @@ sw = data.frame(
   # name = character(N),
   # W = numeric(N),
   # p.value = numeric(N)
+  R.sq.adj = numeric(),
   stringsAsFactors = F
 )
 
 n = 1
 nn = names(models.residuals)[2]
-for (nn in names(models.residuals)) {
+for (nn in names(models.residuals)) {  # Não funciona!
   # print(nn)
   # print(shapiro.test(models.residuals[[nn]]))
   tt = shapiro.test(models.residuals[[nn]])
+  mo = modelss[[nn]]
+  summ = summary(mo)
   sw = rbind(sw, data.frame(
     name = as.character(nn),
     W = as.numeric(tt[1]),
-    p.value = as.numeric(tt[2])
+    p.value = as.numeric(tt[2])  #,
+    # R.sq.adj=summ$adj.r.squared  # Não funciona
   ))
 }
 
-kable(sw)
+```
 
+```{r}
+kable(sw)
 ```
 
 Os resíduos dos modelos 6 e 7 tem sua estatística W abaixo de 96%. Todos os outros ficara acima de 99%. Seus gráficos Q-Q apresentam deformidades que levantam suspeitas de que não sejam ~N.
